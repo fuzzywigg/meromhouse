@@ -1,0 +1,6 @@
+name = "meromhouse"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "."
+
+# Local dev only — not used by CF Pages deploy
+# Run: npx wrangler pages dev . --kv KV

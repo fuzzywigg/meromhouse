@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Andrew Pappas — Building in Public</title>
+  <meta name="description" content="Live KPI dashboard — projects, research, and deployments from Andrew Pappas." />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --navy: #1a2233;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 1.5rem 1.75rem;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header h1 span { color: var(--accent); }
+    header p {
+      color: var(--muted);
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
+    .header-meta {
+      display: flex;
+      gap: 1.25rem;
+      justify-content: center;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .header-meta a { color: var(--muted); }
+    .header-meta a:hover { color: var(--accent); }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.25rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .card-icon { font-size: 1rem; }
+    .card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      line-height: 1;
+    }
+    .card-value.loading { color: var(--muted); font-size: 1.1rem; }
+    .card-sub { font-size: 0.82rem; color: var(--muted); }
+    .card-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+    .card-row-label { color: var(--muted); }
+    .card-row-value { font-weight: 600; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-active { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+    .badge-wip    { background: rgba(210,153,34,0.15); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
+    .badge-live   { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.25); }
+
+    /* ── Project rows ── */
+    .project-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+    .project-row:last-child { border-bottom: none; }
+    .project-name { font-weight: 500; }
+    .project-desc { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Research card ── */
+    .research-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .research-meta { font-size: 0.8rem; color: var(--muted); }
+
+    /* ── Status indicators ── */
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+    }
+    .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.yellow { background: var(--yellow); }
+    .status-dot.loading { background: var(--muted); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2.5rem 1rem 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--accent); }
+
+    /* ── Refresh bar ── */
+    #refresh-bar {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 0.5rem;
+      background: var(--navy);
+      border-bottom: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<div id="refresh-bar">Live data — refreshes every 5 minutes &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span></div>
+
+<header>
+  <h1>Andrew <span>Pappas</span></h1>
+  <p>Environmental systems · AI governance · Digital sovereignty</p>
+  <div class="header-meta">
+    <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://twitter.com/mr_pappas" target="_blank" rel="noopener">X / Twitter</a>
+    <a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener">YouTube</a>
+    <a href="mailto:apappas.pu@gmail.com">Email</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- Card 1: GitHub Activity -->
+  <div class="card">
+    <div class="card-header"><span class="card-icon">⚡</span> GitHub Activity</div>
+    <div class="card-value loading" id="gh-stars">—</div>
+    <div class="card-sub">total stars received</div>
+    <div class="card-rows">
+      <div class="card-row">
+        <span class="card-row-label">Public repos</span>
+        <span class="card-row-value" id="gh-repos">—</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Commits this month</span>
+        <span class="card-row-value" id="gh-commits">—</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Profile</span>
+        <span class="card-row-value"><a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">fuzzywigg →</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Active Projects -->
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🔧</span> Active Projects</div>
+    <div class="card-rows">
+      <div class="project-row">
+        <div>
+          <div class="project-name">matrix-workers</div>
+          <div class="project-desc">CF Workers Matrix bridge</div>
+        </div>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="project-row">
+        <div>
+          <div class="project-name">Backlink</div>
+          <div class="project-desc">IPTV catalog + stream infra</div>
+        </div>
+        <span class="badge badge-live">Live</span>
+      </div>
+      <div class="project-row">
+        <div>
+          <div class="project-name">praetor</div>
+          <div class="project-desc">AI orchestration engine</div>
+        </div>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="project-row">
+        <div>
+          <div class="project-name">claw-mcp</div>
+          <div class="project-desc">MCP server for OpenClaw</div>
+        </div>
+        <span class="badge badge-wip">WIP</span>
+      </div>
+      <div class="project-row">
+        <div>
+          <div class="project-name">agents-governance</div>
+          <div class="project-desc">AI agent safety framework</div>
+        </div>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="project-row">
+        <div>
+          <div class="project-name">fuzzywigg-ai</div>
+          <div class="project-desc">Personal AI stack</div>
+        </div>
+        <span class="badge badge-wip">WIP</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: REE Research -->
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🔬</span> REE Research</div>
+    <div class="research-title">Indiana's Opportunity in Rare Earth Elements and Critical Minerals</div>
+    <div class="research-meta">Indiana Journal of Earth Sciences · 2025</div>
+    <div class="card-rows" style="margin-top:0.25rem;">
+      <div class="card-row">
+        <span class="card-row-label">Journal</span>
+        <span class="card-row-value">IJES 2025</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Focus</span>
+        <span class="card-row-value">Critical minerals policy</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Context</span>
+        <span class="card-row-value">IDEM Deputy Asst. Commissioner</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Citations</span>
+        <span class="card-row-value" id="ree-citations">tracking</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: Writing & Content -->
+  <div class="card">
+    <div class="card-header"><span class="card-icon">✍️</span> Writing & Content</div>
+    <div class="card-rows">
+      <div class="card-row">
+        <span class="card-row-label">meromhouse posts</span>
+        <span class="card-row-value" id="blog-count">coming soon</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">LinkedIn articles</span>
+        <span class="card-row-value" id="li-count">—</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">X / Twitter</span>
+        <span class="card-row-value"><a href="https://twitter.com/mr_pappas" target="_blank" rel="noopener">@mr_pappas →</a></span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">YouTube</span>
+        <span class="card-row-value"><a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener">@fuzzywigg →</a></span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Domain</span>
+        <span class="card-row-value"><a href="https://fuzzywigg.com" target="_blank" rel="noopener">fuzzywigg.com →</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 5: Live Deployments -->
+  <div class="card">
+    <div class="card-header"><span class="card-icon">🚀</span> Live Deployments</div>
+    <div class="card-value" id="deploy-count">6</div>
+    <div class="card-sub">active deployments</div>
+    <div class="card-rows" style="margin-top:0.4rem;">
+      <div class="card-row">
+        <span class="card-row-label">CF Workers</span>
+        <span class="card-row-value">4</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">CF Pages</span>
+        <span class="card-row-value">2</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">CF D1 databases</span>
+        <span class="card-row-value">2</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Stack</span>
+        <span class="card-row-value">TS · Python · CF · D1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 6: Status -->
+  <div class="card">
+    <div class="card-header"><span class="card-icon">📡</span> Uptime / Status</div>
+    <div class="card-rows">
+      <div class="card-row">
+        <span class="card-row-label"><span class="status-dot green"></span> meromhouse.org</span>
+        <span class="card-row-value" style="color:var(--green)">online</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label"><span class="status-dot green"></span> fuzzywigg.com</span>
+        <span class="card-row-value"><a href="https://fuzzywigg.com" target="_blank" rel="noopener">live →</a></span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label"><span class="status-dot loading" id="gh-dot"></span> GitHub API</span>
+        <span class="card-row-value" id="gh-status">checking…</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">Backlink catalog</span>
+        <span class="card-row-value" id="backlink-count">~8,200 stations</span>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label">IPTV-org freshness</span>
+        <span class="card-row-value" id="iptv-freshness">live</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="mailto:apappas.pu@gmail.com">Email</a>
+    &nbsp;·&nbsp;
+    Powered by Cloudflare Pages + Geryon 🦀
+  </p>
+  <p style="margin-top:0.4rem;">Part of the <a href="https://fuzzywigg.com">smtp.eth</a> ecosystem</p>
+</footer>
+
+<script>
+  const GITHUB_STATS_URL = '/api/github-stats';
+  const REFRESH_MS = 5 * 60 * 1000; // 5 min
+
+  function setEl(id, val) {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val; el.classList.remove('loading'); }
+  }
+
+  async function loadGitHub() {
+    try {
+      const res = await fetch(GITHUB_STATS_URL);
+      if (!res.ok) throw new Error('API error');
+      const d = await res.json();
+      setEl('gh-stars', d.total_stars ?? '—');
+      setEl('gh-repos', d.public_repos ?? '—');
+      setEl('gh-commits', d.recent_commits ?? '—');
+      setEl('gh-status', 'ok');
+      const dot = document.getElementById('gh-dot');
+      if (dot) { dot.classList.remove('loading'); dot.classList.add('green'); }
+    } catch {
+      setEl('gh-stars', '—');
+      setEl('gh-status', 'unavailable');
+    }
+  }
+
+  function updateTimestamp() {
+    const el = document.getElementById('last-updated');
+    if (el) el.textContent = new Date().toLocaleTimeString();
+  }
+
+  async function refresh() {
+    await loadGitHub();
+    updateTimestamp();
+  }
+
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>
