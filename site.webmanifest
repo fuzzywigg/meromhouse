@@ -1,0 +1,19 @@
+{
+  "name": "Merom House",
+  "short_name": "MH",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#12201a",
+  "background_color": "#12201a",
+  "display": "standalone"
+}

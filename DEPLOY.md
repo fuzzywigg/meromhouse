@@ -1,10 +1,26 @@
 # DEPLOY.md — meromhouse.org
 
-## One-time setup (~20 minutes of Andrew's time)
+## Current Production State
+
+Cloudflare Pages project `meromhouse` exists and serves this repo. A verified deployment is live at:
+
+```text
+https://8491053c.meromhouse.pages.dev
+```
+
+Smoke-tested paths:
+
+- `/`
+- `/api/health`
+- `/og-image.jpg`
+
+Remaining cutover work: ensure the custom domain `meromhouse.org` is attached to the `meromhouse` Pages project and no longer routes to the retired Next.js app.
+
+## Historical One-time Setup
 
 ### 1. Create the GitHub repo
 
-The PAT currently doesn't have `repo:create` scope. Two options:
+The GitHub repo already exists as `fuzzywigg/meromhouse`.
 
 **Option A — GitHub UI (30 seconds):**
 1. Go to https://github.com/new
@@ -43,11 +59,12 @@ git push -u origin main
 
 ---
 
-### 4. Add custom domain
+### 4. Add or move custom domain
 
-1. In CF Pages project → **Custom domains** → Add domain → `meromhouse.org`
+1. In CF Pages project `meromhouse` → **Custom domains** → Add domain → `meromhouse.org`
 2. If DNS is already on Cloudflare: automatic CNAME added
 3. If DNS is elsewhere: add `CNAME meromhouse.org → <project>.pages.dev`
+4. If Cloudflare says the domain is already attached to another Pages project, remove it from the old project first, then add it here.
 
 ---
 

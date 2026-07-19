@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required files
+        run: |
+          test -f index.html
+          test -f _headers
+          test -f _redirects
+          test -f functions/api/health.js
+          test -f functions/api/github-stats.js
+          test -f og-image.jpg
+          test -f site.webmanifest
+          test -f public/favicon.svg
+      - name: Check for obvious secret material
+        run: |
+          ! grep -RInE '(api[_-]?key|secret|token|password)\\s*[:=]' \
+            --exclude-dir=.git \
+            --exclude=README.md \
+            --exclude=DEPLOY.md \
+            --exclude='*.md' \
+            .
