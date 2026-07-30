@@ -9,7 +9,7 @@ Canonical source for [meromhouse.org](https://meromhouse.org), Andrew Pappas's p
 - Keeper repo: `fuzzywigg/meromhouse`
 - Retired repo: `fuzzywigg/meromhouse.org`
 - Production host: Cloudflare Pages project `meromhouse`
-- Live deployment: `https://8491053c.meromhouse.pages.dev`
+- Live production URL: `https://meromhouse.org`
 
 The former `meromhouse.org` Next.js repo was folded into this repo on 2026-07-18. Durable governance notes, release process, favicon, and manifest assets were preserved here. Development should happen in this repo only.
 

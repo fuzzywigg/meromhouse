@@ -2,19 +2,19 @@
 
 ## Current Production State
 
-Cloudflare Pages project `meromhouse` exists and serves this repo. A verified deployment is live at:
+Cloudflare Pages project `meromhouse` serves this repo and now owns the production custom domain:
 
 ```text
-https://8491053c.meromhouse.pages.dev
+https://meromhouse.org
 ```
 
-Smoke-tested paths:
+Cutover verification endpoints:
 
 - `/`
 - `/api/health`
 - `/og-image.jpg`
 
-Remaining cutover work: ensure the custom domain `meromhouse.org` is attached to the `meromhouse` Pages project and no longer routes to the retired Next.js app.
+The previous `meromhouse-org` Pages project is no longer a production routing dependency and can be cleaned up separately.
 
 ## Historical One-time Setup
 

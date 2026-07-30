@@ -26,5 +26,5 @@ Keep `fuzzywigg/meromhouse` as the production repo. Retire `fuzzywigg/meromhouse
 
 ## Follow-up
 
-- Confirm `https://meromhouse.org` routes to Cloudflare Pages project `meromhouse`.
-- Delete or archive the retired GitHub repo after this consolidation commit is pushed and verified.
+- ✅ Confirmed on 2026-07-30: `https://meromhouse.org` routes to Cloudflare Pages project `meromhouse` and serves this static dashboard.
+- Old-project/repo cleanup can proceed independently and is no longer a production cutover blocker.
