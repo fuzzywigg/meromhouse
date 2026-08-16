@@ -2,7 +2,7 @@
 
 > Andrew Pappas, building in public.
 
-Canonical source for [meromhouse.org](https://meromhouse.org), Andrew Pappas's public KPI dashboard. Shows real-time data on active projects, GitHub activity, research output, and deployment status.
+Canonical source for [meromhouse.org](https://meromhouse.org), Andrew Pappas's public KPI dashboard. Shows active projects, GitHub activity, research output, and deployment status.
 
 ## Repository Status
 
@@ -19,17 +19,38 @@ The former `meromhouse.org` Next.js repo was folded into this repo on 2026-07-18
 - CF Pages Functions (github-stats API, auto-cached)
 - Vanilla HTML/CSS/JS (zero dependencies, fast)
 
+## Dashboard (live)
+
+![meromhouse KPI dashboard](./docs/screenshots/meromhouse-home.png)
+
+*Live capture from [meromhouse.pages.dev](https://meromhouse.pages.dev) (same Pages project as meromhouse.org).*
+
+## How it works
+
+```mermaid
+flowchart LR
+  Browser["Browser"] --> Index["index.html<br/>dashboard cards"]
+  Index -->|"fetch /api/github-stats<br/>(GitHub Activity card only)"| Fn["functions/api/github-stats.js"]
+  Fn -->|"optional KV HIT"| KV["KV cache"]
+  Fn -->|"miss / no KV"| GH["GitHub API<br/>user fuzzywigg"]
+  GH --> Fn
+  Fn --> Index
+  Index -.->|"hardcoded HTML<br/>(projects, research,<br/>writing, deployments, uptime)"| Static["Static card copy"]
+```
+
 ## Data Sources
 
 | Source | Status | Card |
 |--------|--------|------|
-| GitHub API | Live | GitHub Activity |
-| Hardcoded | Live | Active Projects, REE Research |
-| Manual update | Live | Writing, Deployments |
-| CF Analytics | Planned | Page views |
-| Google Search Console | Planned | SEO impressions |
-| X API | Planned | Followers |
-| YouTube API | Planned | Subscribers |
+| GitHub API | Live fetch | GitHub Activity |
+| Hardcoded in `index.html` | Static | Active Projects, REE Research |
+| Hardcoded / manual edit | Static | Writing, Deployments, Uptime |
+| CF Analytics | Planned (not wired) | Page views |
+| Google Search Console | Planned (not wired) | SEO impressions |
+| X API | Planned (not wired) | Followers |
+| YouTube API | Planned (not wired) | Subscribers |
+
+Only the GitHub Activity card calls a Pages Function. Everything else is copy in `index.html` until those Planned sources are wired.
 
 ## Deploy
 
@@ -44,7 +65,10 @@ meromhouse/
 │   ├── github-stats.js # CF Pages Function — GitHub data aggregator
 │   └── health.js       # CF Pages Function — health check
 ├── public/             # Favicon assets retained from retired Next app
-├── docs/               # Governance, release, and consolidation notes
+├── docs/               # Governance, release, screenshots
+├── .cursor/
+│   └── environment.json # Cloud agent install/start (static + wrangler)
+├── site.webmanifest    # PWA manifest (icons under /public/)
 ├── _headers            # CF Pages security headers
 ├── _redirects          # CF Pages URL rewrites
 ├── wrangler.toml       # Local dev config

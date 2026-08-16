@@ -1,0 +1,4 @@
+{
+  "install": "true",
+  "start": "npx --yes wrangler@4 pages dev . --port 8788 --ip 0.0.0.0"
+}
