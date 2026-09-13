@@ -1,1 +1,18 @@
+# Wrangler / Pages local state
 .wrangler/
+.mf/
+
+# Local env / secrets (never commit)
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
