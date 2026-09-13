@@ -29,6 +29,11 @@ Andrew's public KPI dashboard at meromhouse.org. Real-time view of active projec
 - Deleting production assets, domains, or repos
 - Publishing external statements as Andrew
 
+## Cloud Agent bootstrap
+- `.cursor/environment.json` — `install` verifies keeper files; `start` runs local Pages via wrangler
+- No secrets in env.json, docs, issues, commits, or logs
+- DNS / custom-domain dashboard cleanup remains HITL (issue #4)
+
 ## Verification
 Before reporting done:
 - `npx wrangler pages dev . --port <free-port>` or static HTML smoke check

@@ -1,4 +1,5 @@
 {
-  "install": "true",
+  "name": "meromhouse",
+  "install": "test -f index.html && test -f AGENTS.md && test -f DEPLOY.md && test -f README.md && test -f wrangler.toml && test -f functions/api/health.js && test -f functions/api/github-stats.js && test -f .github/workflows/ci.yml",
   "start": "npx --yes wrangler@4 pages dev . --port 8788 --ip 0.0.0.0"
 }

@@ -1,8 +1,14 @@
 # meromhouse
 
+[![CI](https://github.com/fuzzywigg/meromhouse/actions/workflows/ci.yml/badge.svg)](https://github.com/fuzzywigg/meromhouse/actions/workflows/ci.yml)
+
 > Andrew Pappas, building in public.
 
 Canonical source for [meromhouse.org](https://meromhouse.org), Andrew Pappas's public KPI dashboard. Shows active projects, GitHub activity, research output, and deployment status.
+
+## Cloud agents
+
+Bootstrap lives in [`.cursor/environment.json`](.cursor/environment.json) (`install` verifies keeper files; `start` runs `wrangler pages dev` — no secrets in the file). PR CI is [`.github/workflows/ci.yml`](.github/workflows/ci.yml). DNS / custom-domain leftover cleanup stays HITL (issue #4). Deploy walkthrough: [DEPLOY.md](./DEPLOY.md).
 
 ## Repository Status
 
