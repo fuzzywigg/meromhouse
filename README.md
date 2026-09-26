@@ -22,7 +22,7 @@ The former `meromhouse.org` Next.js repo was folded into this repo on 2026-07-18
 ## Stack
 
 - Cloudflare Pages (hosting, zero cost)
-- CF Pages Functions (github-stats API, auto-cached)
+- CF Pages Functions (github-stats API; optional KV cache when bound)
 - Vanilla HTML/CSS/JS (zero dependencies, fast)
 
 ## Dashboard (live)
