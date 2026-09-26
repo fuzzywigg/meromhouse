@@ -1,2 +1,5 @@
-/github /api/github-stats 200
-/health /api/health 200
+# No active redirects.
+# Cloudflare Pages applies _redirects only to static-asset responses. With Pages
+# Functions present, /health and /github are not rewritten to /api/* — use
+# /api/health and /api/github-stats directly.
+# https://developers.cloudflare.com/pages/configuration/redirects/

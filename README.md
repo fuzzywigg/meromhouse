@@ -76,7 +76,7 @@ meromhouse/
 │   └── environment.json # Cloud agent install/start (static + wrangler)
 ├── site.webmanifest    # PWA manifest (icons under /public/)
 ├── _headers            # CF Pages security headers
-├── _redirects          # CF Pages URL rewrites
+├── _redirects          # CF Pages redirects (no active rules; APIs under /api/*)
 ├── wrangler.toml       # Local dev config
 ├── DEPLOY.md           # Setup walkthrough
 └── AGENTS.md           # Agent governance
