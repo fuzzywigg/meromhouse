@@ -74,7 +74,7 @@ Add env var in CF Pages → Settings → Environment variables:
 - **Variable name:** `GITHUB_TOKEN`
 - **Value:** your GitHub PAT (needs `public_repo` read scope only)
 
-Without this: 60 req/hr (fine for v1 — dashboard caches for 1h)
+Without this: 60 req/hr (fine for v1; optional KV §6 caches for 1h when bound)
 With this: 5,000 req/hr
 
 ---
