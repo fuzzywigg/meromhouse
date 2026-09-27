@@ -13,6 +13,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Check required files
         run: |
           test -f index.html
@@ -38,3 +41,5 @@ jobs:
             --exclude='*.yml' \
             --exclude='*.yaml' \
             .
+      - name: Run Pages Function unit tests
+        run: node --test test/*.test.js
