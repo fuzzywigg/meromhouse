@@ -177,9 +177,121 @@ describe('GET /api/github-stats', () => {
         env: {},
       });
       assert.equal(res.status, 502);
+      assert.equal(res.headers.get('Cache-Control'), 'no-store');
       const body = await res.json();
       assert.equal(body.ok, false);
       assert.match(body.error, /GitHub user API 403/);
+    });
+  });
+
+  it('follows the repos Link header when summing stars', async () => {
+    const seen = [];
+    await withMockedFetch((url) => {
+      if (url.includes('/users/fuzzywigg/repos')) {
+        seen.push(url);
+        if (seen.length === 1) {
+          return jsonResponse(
+            [{ name: 'page1', stargazers_count: 4, fork: false, html_url: 'https://github.com/fuzzywigg/page1' }],
+            200,
+            { Link: '<https://api.github.com/users/fuzzywigg/repos?per_page=100&page=2>; rel="next"' },
+          );
+        }
+        return jsonResponse([
+          { name: 'page2', stargazers_count: 6, fork: false, html_url: 'https://github.com/fuzzywigg/page2' },
+        ]);
+      }
+      return githubFetchHandler(url);
+    }, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: {} });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(seen.length, 2);
+      assert.equal(body.total_stars, 10);
+      assert.deepEqual(body.top_repos.map((r) => r.name), ['page2', 'page1']);
+    });
+  });
+
+  it('stops repo pagination at the page cap', async () => {
+    let repoPages = 0;
+    await withMockedFetch((url) => {
+      if (url.includes('/users/fuzzywigg/repos')) {
+        repoPages += 1;
+        return jsonResponse(
+          [{ name: `p${repoPages}`, stargazers_count: 1, fork: false, html_url: `https://github.com/fuzzywigg/p${repoPages}` }],
+          200,
+          { Link: `<https://api.github.com/users/fuzzywigg/repos?per_page=100&page=${repoPages + 1}>; rel="next"` },
+        );
+      }
+      return githubFetchHandler(url);
+    }, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: {} });
+      const body = await res.json();
+      assert.equal(repoPages, 10);
+      assert.equal(body.total_stars, 10);
+    });
+  });
+
+  it('counts payload.size when the commits array is capped', async () => {
+    const now = new Date();
+    const midMonth = new Date(now.getFullYear(), now.getMonth(), 15).toISOString();
+    await withMockedFetch((url) => {
+      if (url.includes('/users/fuzzywigg/events')) {
+        return jsonResponse([
+          {
+            type: 'PushEvent',
+            created_at: midMonth,
+            payload: { size: 25, commits: Array.from({ length: 20 }, () => ({})) },
+          },
+        ]);
+      }
+      return githubFetchHandler(url);
+    }, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: {} });
+      const body = await res.json();
+      assert.equal(body.recent_commits, 25);
+    });
+  });
+
+  it('refetches when the KV entry is not valid stats JSON', async () => {
+    const kv = createMemoryKv({ 'github-stats-v1': '{"public_repos":"nope"}' });
+    await withMockedFetch(githubFetchHandler, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: { KV: kv } });
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get('X-Cache'), 'MISS');
+      const body = await res.json();
+      assert.equal(body.public_repos, 12);
+      assert.equal(body.total_stars, 10 + 5 + 99 + 7);
+    });
+  });
+
+  it('does not follow a next link off api.github.com', async () => {
+    const seen = [];
+    await withMockedFetch((url) => {
+      seen.push(url);
+      if (url.includes('/users/fuzzywigg/repos')) {
+        return jsonResponse(
+          [{ name: 'only', stargazers_count: 3, fork: false, html_url: 'https://github.com/fuzzywigg/only' }],
+          200,
+          { Link: '<https://evil.example/repos?page=2>; rel="next"' },
+        );
+      }
+      return githubFetchHandler(url);
+    }, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: {} });
+      const body = await res.json();
+      assert.equal(body.total_stars, 3);
+      assert.equal(seen.some((url) => url.includes('evil.example')), false);
+    });
+  });
+
+  it('refetches when the KV entry is not JSON', async () => {
+    const kv = createMemoryKv({ 'github-stats-v1': 'not-json' });
+    await withMockedFetch(githubFetchHandler, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: { KV: kv } });
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get('X-Cache'), 'MISS');
+      const body = await res.json();
+      assert.equal(body.public_repos, 12);
     });
   });
 

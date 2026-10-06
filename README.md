@@ -36,27 +36,32 @@ The former `meromhouse.org` Next.js repo was folded into this repo on 2026-07-18
 ```mermaid
 flowchart LR
   Browser["Browser"] --> Index["index.html<br/>dashboard cards"]
-  Index -->|"fetch /api/github-stats<br/>(GitHub Activity card only)"| Fn["functions/api/github-stats.js"]
-  Fn -->|"optional KV HIT"| KV["KV cache"]
-  Fn -->|"miss / no KV"| GH["GitHub API<br/>user fuzzywigg"]
-  GH --> Fn
-  Fn --> Index
-  Index -.->|"hardcoded HTML<br/>(projects, research,<br/>writing, deployments, uptime)"| Static["Static card copy"]
+  Index -->|"fetch /api/github-stats<br/>while the tab is visible"| GhFn["functions/api/github-stats.js"]
+  GhFn -->|"valid KV JSON"| KV["KV cache"]
+  GhFn -->|"miss, no KV, or invalid cache"| GH["GitHub API<br/>user, repo pages, events"]
+  GH --> GhFn
+  GhFn --> Index
+  Index -->|"fetch /api/health"| Health["functions/api/health.js"]
+  Health --> Index
+  Index -.->|"static copy"| Static["Projects, research,<br/>writing, deployments"]
+  Index -.->|"link, not a probe"| Hub["fuzzywigg.ai"]
 ```
 
 ## Data Sources
 
 | Source | Status | Card |
 |--------|--------|------|
-| GitHub API | Live fetch | GitHub Activity |
+| GitHub API via `/api/github-stats` | Live. `total_stars` follows repo `Link` pages (capped). `recent_commits` sums PushEvent `payload.size` in the fetched events window for this month, not a full history. The refresh bar shows `cached_at`, or "unavailable" if the fetch fails. | GitHub Activity |
+| `/api/health` | Live same-origin fetch | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
+| Not probed from the browser | Link only | Uptime: fuzzywigg.ai |
 | Hardcoded in `index.html` | Static | Active Projects, REE Research |
-| Hardcoded / manual edit | Static | Writing, Deployments, Uptime |
+| Hardcoded / manual edit | Static | Writing, Deployments |
 | CF Analytics | Planned (not wired) | Page views |
 | Google Search Console | Planned (not wired) | SEO impressions |
 | X API | Planned (not wired) | Followers |
 | YouTube API | Planned (not wired) | Subscribers |
 
-Only the GitHub Activity card calls a Pages Function. Everything else is copy in `index.html` until those Planned sources are wired.
+GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
 
 ## Deploy
 
