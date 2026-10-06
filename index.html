@@ -42,6 +42,11 @@
     }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
+    a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
 
     /* ── Header ── */
     header {
@@ -78,7 +83,7 @@
       margin: 2rem auto;
       padding: 0 1.25rem;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
       gap: 1.25rem;
     }
 
@@ -167,6 +172,20 @@
     .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .status-dot.yellow { background: var(--yellow); }
     .status-dot.loading { background: var(--muted); }
+    .card-rows.offset { margin-top: 0.25rem; }
+    .status-online { color: var(--green); }
+    .footer-note { margin-top: 0.4rem; }
+    .noscript-note {
+      font-size: 0.82rem;
+      color: var(--text);
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.55rem 0.7rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .status-dot.green { box-shadow: none; }
+    }
 
     /* ── Footer ── */
     footer {
@@ -210,6 +229,9 @@
   <!-- Card 1: GitHub Activity -->
   <div class="card">
     <div class="card-header"><span class="card-icon">⚡</span> GitHub Activity</div>
+    <noscript>
+      <p class="noscript-note">JavaScript is off, so GitHub activity on this card does not load.</p>
+    </noscript>
     <div class="card-value loading" id="gh-stars">—</div>
     <div class="card-sub">total stars received</div>
     <div class="card-rows">
@@ -261,7 +283,7 @@
     <div class="card-header"><span class="card-icon">🔬</span> REE Research</div>
     <div class="research-title">Indiana's Opportunity in Rare Earth Elements and Critical Minerals</div>
     <div class="research-meta">Indiana Journal of Earth Sciences · 2025</div>
-    <div class="card-rows" style="margin-top:0.25rem;">
+    <div class="card-rows offset">
       <div class="card-row">
         <span class="card-row-label">Journal</span>
         <span class="card-row-value">IJES 2025</span>
@@ -329,7 +351,7 @@
     <div class="card-rows">
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot green"></span> meromhouse.org</span>
-        <span class="card-row-value" style="color:var(--green)">online</span>
+        <span class="card-row-value status-online">online</span>
       </div>
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot green"></span> fuzzywigg.ai</span>
@@ -354,7 +376,7 @@
     &nbsp;·&nbsp;
     Powered by Cloudflare Pages
   </p>
-  <p style="margin-top:0.4rem;">Part of the <a href="https://www.fuzzywigg.ai/">fuzzywigg.ai</a> hub</p>
+  <p class="footer-note">Part of the <a href="https://www.fuzzywigg.ai/">fuzzywigg.ai</a> hub</p>
 </footer>
 
 <script>
