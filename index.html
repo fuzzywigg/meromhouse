@@ -166,6 +166,7 @@
     }
     .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .status-dot.yellow { background: var(--yellow); }
+    .status-dot.red { background: var(--red); }
     .status-dot.loading { background: var(--muted); }
 
     /* ── Footer ── */
@@ -193,7 +194,7 @@
 </head>
 <body>
 
-<div id="refresh-bar">Live data — refreshes every 5 minutes &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span></div>
+<div id="refresh-bar">GitHub activity refreshes every 5 minutes while this tab is visible. Other cards are static. &nbsp;|&nbsp; Last updated: <span id="last-updated" aria-live="polite">—</span></div>
 
 <header>
   <h1>Andrew <span>Pappas</span></h1>
@@ -210,16 +211,16 @@
   <!-- Card 1: GitHub Activity -->
   <div class="card">
     <div class="card-header"><span class="card-icon">⚡</span> GitHub Activity</div>
-    <div class="card-value loading" id="gh-stars">—</div>
+    <div class="card-value loading" id="gh-stars" aria-live="polite">—</div>
     <div class="card-sub">total stars received</div>
     <div class="card-rows">
       <div class="card-row">
         <span class="card-row-label">Public repos</span>
-        <span class="card-row-value" id="gh-repos">—</span>
+        <span class="card-row-value" id="gh-repos" aria-live="polite">—</span>
       </div>
       <div class="card-row">
         <span class="card-row-label">Commits this month</span>
-        <span class="card-row-value" id="gh-commits">—</span>
+        <span class="card-row-value" id="gh-commits" aria-live="polite">—</span>
       </div>
       <div class="card-row">
         <span class="card-row-label">Profile</span>
@@ -337,7 +338,7 @@
       </div>
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot loading" id="gh-dot"></span> GitHub API</span>
-        <span class="card-row-value" id="gh-status">checking…</span>
+        <span class="card-row-value" id="gh-status" aria-live="polite">checking…</span>
       </div>
     </div>
   </div>
@@ -360,10 +361,36 @@
 <script>
   const GITHUB_STATS_URL = '/api/github-stats';
   const REFRESH_MS = 5 * 60 * 1000; // 5 min
+  let refreshTimer = null;
 
   function setEl(id, val) {
     const el = document.getElementById(id);
     if (el) { el.textContent = val; el.classList.remove('loading'); }
+  }
+
+  function setGitHubDot(state) {
+    const dot = document.getElementById('gh-dot');
+    if (!dot) return;
+    dot.classList.remove('loading', 'green', 'red');
+    if (state) dot.classList.add(state);
+  }
+
+  function showCachedAt(cachedAt) {
+    const el = document.getElementById('last-updated');
+    if (!el) return;
+    const parsed = cachedAt ? new Date(cachedAt) : null;
+    el.textContent = parsed && !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleString()
+      : 'unavailable';
+  }
+
+  function showGitHubUnavailable() {
+    setEl('gh-stars', 'unavailable');
+    setEl('gh-repos', 'unavailable');
+    setEl('gh-commits', 'unavailable');
+    setEl('gh-status', 'unavailable');
+    showCachedAt(null);
+    setGitHubDot('red');
   }
 
   async function loadGitHub() {
@@ -375,26 +402,40 @@
       setEl('gh-repos', d.public_repos ?? '—');
       setEl('gh-commits', d.recent_commits ?? '—');
       setEl('gh-status', 'ok');
-      const dot = document.getElementById('gh-dot');
-      if (dot) { dot.classList.remove('loading'); dot.classList.add('green'); }
+      showCachedAt(d.cached_at);
+      setGitHubDot('green');
     } catch {
-      setEl('gh-stars', '—');
-      setEl('gh-status', 'unavailable');
+      showGitHubUnavailable();
     }
   }
 
-  function updateTimestamp() {
-    const el = document.getElementById('last-updated');
-    if (el) el.textContent = new Date().toLocaleTimeString();
+  function stopRefreshTimer() {
+    if (refreshTimer !== null) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+  }
+
+  function startRefreshTimer() {
+    if (refreshTimer !== null || document.hidden) return;
+    refreshTimer = setInterval(refresh, REFRESH_MS);
   }
 
   async function refresh() {
     await loadGitHub();
-    updateTimestamp();
   }
 
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopRefreshTimer();
+      return;
+    }
+    refresh();
+    startRefreshTimer();
+  });
+
   refresh();
-  setInterval(refresh, REFRESH_MS);
+  startRefreshTimer();
 </script>
 </body>
 </html>
