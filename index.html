@@ -166,7 +166,8 @@
     }
     .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .status-dot.yellow { background: var(--yellow); }
-    .status-dot.red { background: var(--red); }
+    .status-dot.red,
+    .status-dot.error { background: var(--red); }
     .status-dot.link {
       background: transparent;
       box-shadow: none;
@@ -338,6 +339,10 @@
         <span class="card-row-value" id="site-status" aria-live="polite">checking…</span>
       </div>
       <div class="card-row">
+        <span class="card-row-label">Checked</span>
+        <time class="card-row-value" id="site-checked" aria-live="polite">—</time>
+      </div>
+      <div class="card-row">
         <span class="card-row-label"><span class="status-dot link" aria-hidden="true"></span> fuzzywigg.ai</span>
         <span class="card-row-value">link · <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">hub</a></span>
       </div>
@@ -399,50 +404,56 @@
     updateTimestamp();
   }
 
-  refresh();
-  setInterval(refresh, REFRESH_MS);
-</script>
-<script>
   const HEALTH_URL = '/api/health';
-  const HEALTH_REFRESH_MS = 5 * 60 * 1000;
+  let healthTimer = null;
 
-  function renderSiteStatus(state, whenIso) {
+  function setSiteDot(state) {
     const dot = document.getElementById('site-dot');
-    const value = document.getElementById('site-status');
-    if (dot) {
-      dot.classList.remove('loading', 'green', 'yellow', 'red', 'link');
-      dot.classList.add(state === 'online' ? 'green' : state === 'degraded' ? 'yellow' : 'red');
-    }
-    let when = 'unavailable';
-    if (typeof whenIso === 'string') {
-      const parsed = new Date(whenIso);
-      if (!Number.isNaN(parsed.getTime())) when = parsed.toLocaleString();
-    }
-    if (value) value.textContent = state + ' · ' + when;
+    if (!dot) return;
+    dot.classList.remove('loading', 'green', 'yellow', 'red', 'error', 'link');
+    if (state === 'online') dot.classList.add('green');
+    else if (state === 'degraded') dot.classList.add('yellow');
+    else dot.classList.add('error');
   }
 
-  async function loadSiteStatus() {
+  function showSiteChecked(iso) {
+    const el = document.getElementById('site-checked');
+    if (!el) return;
+    const parsed = typeof iso === 'string' ? new Date(iso) : null;
+    if (parsed && !Number.isNaN(parsed.getTime())) {
+      el.dateTime = parsed.toISOString();
+      el.textContent = parsed.toLocaleString();
+      return;
+    }
+    el.removeAttribute('datetime');
+    el.textContent = 'unavailable';
+  }
+
+  async function loadHealth() {
     try {
-      const res = await fetch(HEALTH_URL, { cache: 'no-store' });
+      const res = await fetch(HEALTH_URL);
       if (!res.ok) throw new Error('health http');
       const data = await res.json();
-      const updated = typeof data.updated === 'string' ? data.updated : null;
-      const state = typeof data.status === 'string' ? data.status : '';
-      if (data && data.ok === true && state !== 'degraded' && state !== 'error') {
-        renderSiteStatus('online', updated);
-        return;
+      let state = 'error';
+      if (data.status === 'online' || data.status === 'degraded' || data.status === 'error') {
+        state = data.status;
+      } else if (data.ok === true) {
+        state = 'online';
+      } else if (data.ok === false) {
+        state = 'degraded';
       }
-      if (state === 'error') {
-        renderSiteStatus('error', updated);
-        return;
+      if (state !== 'error' && (typeof data.updated !== 'string' || Number.isNaN(Date.parse(data.updated)))) {
+        state = 'degraded';
       }
-      renderSiteStatus('degraded', updated);
+      setEl('site-status', state);
+      setSiteDot(state);
+      showSiteChecked(data.updated);
     } catch {
-      renderSiteStatus('error', null);
+      setEl('site-status', 'error');
+      setSiteDot('error');
+      showSiteChecked(null);
     }
   }
-
-  let healthTimer = null;
 
   function stopHealthTimer() {
     if (healthTimer === null) return;
@@ -452,7 +463,7 @@
 
   function startHealthTimer() {
     if (healthTimer !== null || document.hidden) return;
-    healthTimer = setInterval(loadSiteStatus, HEALTH_REFRESH_MS);
+    healthTimer = setInterval(loadHealth, REFRESH_MS);
   }
 
   document.addEventListener('visibilitychange', () => {
@@ -460,11 +471,13 @@
       stopHealthTimer();
       return;
     }
-    loadSiteStatus();
+    loadHealth();
     startHealthTimer();
   });
 
-  loadSiteStatus();
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+  loadHealth();
   startHealthTimer();
 </script>
 </body>
