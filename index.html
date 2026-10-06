@@ -166,7 +166,13 @@
     }
     .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .status-dot.yellow { background: var(--yellow); }
-    .status-dot.red { background: var(--red); }
+    .status-dot.red,
+    .status-dot.error { background: var(--red); }
+    .status-dot.link {
+      background: transparent;
+      box-shadow: none;
+      border: 1.5px solid var(--muted);
+    }
     .status-dot.loading { background: var(--muted); }
 
     /* ── Footer ── */
@@ -194,7 +200,7 @@
 </head>
 <body>
 
-<div id="refresh-bar">GitHub activity refreshes every 5 minutes while this tab is visible. Other cards are static. &nbsp;|&nbsp; Last updated: <span id="last-updated" aria-live="polite">—</span></div>
+<div id="refresh-bar">GitHub activity and meromhouse.org status refresh every 5 minutes while this tab is visible. Other cards are static. &nbsp;|&nbsp; Last updated: <span id="last-updated" aria-live="polite">—</span></div>
 
 <header>
   <h1>Andrew <span>Pappas</span></h1>
@@ -329,12 +335,16 @@
     <div class="card-header"><span class="card-icon">📡</span> Uptime / Status</div>
     <div class="card-rows">
       <div class="card-row">
-        <span class="card-row-label"><span class="status-dot green"></span> meromhouse.org</span>
-        <span class="card-row-value" style="color:var(--green)">online</span>
+        <span class="card-row-label"><span class="status-dot loading" id="site-dot" aria-hidden="true"></span> meromhouse.org</span>
+        <span class="card-row-value" id="site-status" aria-live="polite">checking…</span>
       </div>
       <div class="card-row">
-        <span class="card-row-label"><span class="status-dot green"></span> fuzzywigg.ai</span>
-        <span class="card-row-value"><a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">hub →</a></span>
+        <span class="card-row-label">Checked</span>
+        <time class="card-row-value" id="site-checked" aria-live="polite">—</time>
+      </div>
+      <div class="card-row">
+        <span class="card-row-label"><span class="status-dot link" aria-hidden="true"></span> fuzzywigg.ai</span>
+        <span class="card-row-value">link · <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">hub</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot loading" id="gh-dot"></span> GitHub API</span>
@@ -425,17 +435,84 @@
     await loadGitHub();
   }
 
+  const HEALTH_URL = '/api/health';
+  let healthTimer = null;
+
+  function setSiteDot(state) {
+    const dot = document.getElementById('site-dot');
+    if (!dot) return;
+    dot.classList.remove('loading', 'green', 'yellow', 'red', 'error', 'link');
+    if (state === 'online') dot.classList.add('green');
+    else if (state === 'degraded') dot.classList.add('yellow');
+    else dot.classList.add('error');
+  }
+
+  function showSiteChecked(iso) {
+    const el = document.getElementById('site-checked');
+    if (!el) return;
+    const parsed = typeof iso === 'string' ? new Date(iso) : null;
+    if (parsed && !Number.isNaN(parsed.getTime())) {
+      el.dateTime = parsed.toISOString();
+      el.textContent = parsed.toLocaleString();
+      return;
+    }
+    el.removeAttribute('datetime');
+    el.textContent = 'unavailable';
+  }
+
+  async function loadHealth() {
+    try {
+      const res = await fetch(HEALTH_URL);
+      if (!res.ok) throw new Error('health http');
+      const data = await res.json();
+      let state = 'error';
+      if (data.status === 'online' || data.status === 'degraded' || data.status === 'error') {
+        state = data.status;
+      } else if (data.ok === true) {
+        state = 'online';
+      } else if (data.ok === false) {
+        state = 'degraded';
+      }
+      if (state !== 'error' && (typeof data.updated !== 'string' || Number.isNaN(Date.parse(data.updated)))) {
+        state = 'degraded';
+      }
+      setEl('site-status', state);
+      setSiteDot(state);
+      showSiteChecked(data.updated);
+    } catch {
+      setEl('site-status', 'error');
+      setSiteDot('error');
+      showSiteChecked(null);
+    }
+  }
+
+  function stopHealthTimer() {
+    if (healthTimer === null) return;
+    clearInterval(healthTimer);
+    healthTimer = null;
+  }
+
+  function startHealthTimer() {
+    if (healthTimer !== null || document.hidden) return;
+    healthTimer = setInterval(loadHealth, REFRESH_MS);
+  }
+
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stopRefreshTimer();
+      stopHealthTimer();
       return;
     }
     refresh();
     startRefreshTimer();
+    loadHealth();
+    startHealthTimer();
   });
 
   refresh();
   startRefreshTimer();
+  loadHealth();
+  startHealthTimer();
 </script>
 </body>
 </html>
