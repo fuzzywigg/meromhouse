@@ -166,6 +166,12 @@
     }
     .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
     .status-dot.yellow { background: var(--yellow); }
+    .status-dot.red { background: var(--red); }
+    .status-dot.link {
+      background: transparent;
+      box-shadow: none;
+      border: 1.5px solid var(--muted);
+    }
     .status-dot.loading { background: var(--muted); }
 
     /* ── Footer ── */
@@ -328,12 +334,12 @@
     <div class="card-header"><span class="card-icon">📡</span> Uptime / Status</div>
     <div class="card-rows">
       <div class="card-row">
-        <span class="card-row-label"><span class="status-dot green"></span> meromhouse.org</span>
-        <span class="card-row-value" style="color:var(--green)">online</span>
+        <span class="card-row-label"><span class="status-dot loading" id="site-dot" aria-hidden="true"></span> meromhouse.org</span>
+        <span class="card-row-value" id="site-status" aria-live="polite">checking…</span>
       </div>
       <div class="card-row">
-        <span class="card-row-label"><span class="status-dot green"></span> fuzzywigg.ai</span>
-        <span class="card-row-value"><a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">hub →</a></span>
+        <span class="card-row-label"><span class="status-dot link" aria-hidden="true"></span> fuzzywigg.ai</span>
+        <span class="card-row-value">link · <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">hub</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot loading" id="gh-dot"></span> GitHub API</span>
@@ -395,6 +401,71 @@
 
   refresh();
   setInterval(refresh, REFRESH_MS);
+</script>
+<script>
+  const HEALTH_URL = '/api/health';
+  const HEALTH_REFRESH_MS = 5 * 60 * 1000;
+
+  function renderSiteStatus(state, whenIso) {
+    const dot = document.getElementById('site-dot');
+    const value = document.getElementById('site-status');
+    if (dot) {
+      dot.classList.remove('loading', 'green', 'yellow', 'red', 'link');
+      dot.classList.add(state === 'online' ? 'green' : state === 'degraded' ? 'yellow' : 'red');
+    }
+    let when = 'unavailable';
+    if (typeof whenIso === 'string') {
+      const parsed = new Date(whenIso);
+      if (!Number.isNaN(parsed.getTime())) when = parsed.toLocaleString();
+    }
+    if (value) value.textContent = state + ' · ' + when;
+  }
+
+  async function loadSiteStatus() {
+    try {
+      const res = await fetch(HEALTH_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('health http');
+      const data = await res.json();
+      const updated = typeof data.updated === 'string' ? data.updated : null;
+      const state = typeof data.status === 'string' ? data.status : '';
+      if (data && data.ok === true && state !== 'degraded' && state !== 'error') {
+        renderSiteStatus('online', updated);
+        return;
+      }
+      if (state === 'error') {
+        renderSiteStatus('error', updated);
+        return;
+      }
+      renderSiteStatus('degraded', updated);
+    } catch {
+      renderSiteStatus('error', null);
+    }
+  }
+
+  let healthTimer = null;
+
+  function stopHealthTimer() {
+    if (healthTimer === null) return;
+    clearInterval(healthTimer);
+    healthTimer = null;
+  }
+
+  function startHealthTimer() {
+    if (healthTimer !== null || document.hidden) return;
+    healthTimer = setInterval(loadSiteStatus, HEALTH_REFRESH_MS);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopHealthTimer();
+      return;
+    }
+    loadSiteStatus();
+    startHealthTimer();
+  });
+
+  loadSiteStatus();
+  startHealthTimer();
 </script>
 </body>
 </html>

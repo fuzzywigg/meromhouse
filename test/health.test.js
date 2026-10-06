@@ -10,6 +10,7 @@ describe('GET /api/health', () => {
 
     const body = await res.json();
     assert.equal(body.ok, true);
+    assert.equal(body.status, 'online');
     assert.equal(body.version, '0.1.0');
     assert.equal(typeof body.updated, 'string');
     assert.ok(!Number.isNaN(Date.parse(body.updated)), 'updated should be parseable ISO');
