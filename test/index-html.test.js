@@ -74,4 +74,13 @@ describe('index.html', () => {
     ];
     for (const pattern of required) assert.match(html, pattern);
   });
+
+  it('times out health and github-stats fetches and rejects a bad stats shape', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /CLIENT_FETCH_TIMEOUT_MS\s*=\s*10000/);
+    assert.match(script, /AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)/);
+    assert.match(script, /function validGitHubStats\s*\(/);
+    assert.match(script, /d\.partial\s*===\s*true/);
+    assert.match(script, /setEl\('gh-status',\s*'partial'\)/);
+  });
 });

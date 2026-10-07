@@ -51,8 +51,8 @@ flowchart LR
 
 | Source | Status | Card |
 |--------|--------|------|
-| GitHub API via `/api/github-stats` | Live. `total_stars` follows repo `Link` pages (capped). `recent_commits` sums PushEvent `payload.size` in the fetched events window for this month, not a full history. The refresh bar shows `cached_at`, or "unavailable" if the fetch fails. | GitHub Activity |
-| `/api/health` | Live same-origin fetch | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
+| GitHub API via `/api/github-stats` | Live. Upstream fetches time out. Partial repos/events failure returns `partial: true` (not cached in KV). Invalid or partial KV entries are rejected. The card shows `ok`, `partial`, or `unavailable`. | GitHub Activity |
+| `/api/health` | Live same-origin fetch (10s client timeout). `Cache-Control: no-store`. Optional KV probe → `degraded` on timeout/error; `checks.kv` is `unbound` when KV is not bound. | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
 | Not probed from the browser | Link only | Uptime: fuzzywigg.ai |
 | Hardcoded in `index.html` | Static | Active Projects, REE Research |
 | Hardcoded / manual edit | Static | Writing, Deployments |
