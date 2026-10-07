@@ -41,18 +41,20 @@ flowchart LR
   GhFn -->|"miss, no KV, or invalid cache"| GH["GitHub API<br/>user, repo pages, events"]
   GH --> GhFn
   GhFn --> Index
-  Index -->|"fetch /api/health"| Health["functions/api/health.js"]
+  Index -->|"fetch /api/health<br/>while the tab is visible"| Health["functions/api/health.js"]
   Health --> Index
   Index -.->|"static copy"| Static["Projects, research,<br/>writing, deployments"]
   Index -.->|"link, not a probe"| Hub["fuzzywigg.ai"]
 ```
+
+Both live polls use a 5-minute interval and pause on `visibilitychange` when `document.hidden` is true (no background polling). When the tab is visible again, each poll runs once immediately, then the interval restarts.
 
 ## Data Sources
 
 | Source | Status | Card |
 |--------|--------|------|
 | GitHub API via `/api/github-stats` | Live. `total_stars` follows repo `Link` pages (capped). `recent_commits` sums PushEvent `payload.size` in the fetched events window for this month, not a full history. The refresh bar shows `cached_at`, or "unavailable" if the fetch fails. | GitHub Activity |
-| `/api/health` | Live same-origin fetch | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
+| `/api/health` | Live same-origin fetch every 5 minutes while the tab is visible; paused when the tab is hidden | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
 | Not probed from the browser | Link only | Uptime: fuzzywigg.ai |
 | Hardcoded in `index.html` | Static | Active Projects, REE Research |
 | Hardcoded / manual edit | Static | Writing, Deployments |
@@ -61,7 +63,7 @@ flowchart LR
 | X API | Planned (not wired) | Followers |
 | YouTube API | Planned (not wired) | Subscribers |
 
-GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
+GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. Both polls pause while the tab is hidden. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
 
 ## Deploy
 
