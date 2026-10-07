@@ -163,21 +163,31 @@ test.describe('a11y basics', () => {
     }
   });
 
-  test('decorative status dots that declare aria-hidden stay hidden', async ({
+  test('decorative status dots and OG preview stay hidden from AT', async ({
     page,
   }) => {
     await mockGitHubStats(page);
     await page.goto('/');
 
-    // Assert the dots the shell already marks decorative; do not require
-    // every .status-dot (gh-dot may still lack aria-hidden on main).
     await expect(page.locator('#site-dot')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    await expect(page.locator('#gh-dot')).toHaveAttribute(
       'aria-hidden',
       'true',
     );
     await expect(
       page.locator('.status-dot.link[aria-hidden="true"]'),
     ).toHaveCount(1);
+
+    // Footer OG preview is decorative: empty alt + figure aria-hidden.
+    const ogImg = page.locator('.og-preview img');
+    await expect(ogImg).toHaveAttribute('alt', '');
+    await expect(page.locator('figure.og-preview')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
   });
 
   test('keyboard Tab reaches a header link with a visible focus ring', async ({
