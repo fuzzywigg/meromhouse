@@ -45,8 +45,10 @@ jobs:
           test -f scripts/check-security-headers.mjs
           test -f docs/security-headers-2026-10-07.md
           test -f test/e2e/dashboard.smoke.spec.js
+          test -f test/e2e/a11y-axe.smoke.spec.js
           test -f test/e2e/a11y-prefs.smoke.spec.js
           test -f test/e2e/viewport-layout.smoke.spec.js
+          test -f docs/a11y-2026-10-07.md
           test -f test/security-headers.test.js
       - name: Check for committed secret material
         run: |
@@ -100,7 +102,18 @@ jobs:
         run: npm run check:security-headers
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run Playwright dashboard smoke (incl. desktop + phone layout)
+      - name: Run Playwright e2e (axe-core is report-only; see test-results/a11y)
         run: npm run test:e2e
         env:
           CI: true
+      - name: Publish axe a11y summary (report-only; never fails the job)
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f test-results/a11y/axe-summary.md ]; then
+            echo '::group::axe-core accessibility summary (report-only)'
+            cat test-results/a11y/axe-summary.md
+            echo '::endgroup::'
+          else
+            echo 'No test-results/a11y/axe-summary.md produced (e2e may have failed before the axe scan).'
+          fi

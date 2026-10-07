@@ -91,7 +91,7 @@ describe('index.html', () => {
 
   it('offers a skip link to main and labels each card with an h2', () => {
     assert.match(html, /<a\b[^>]*class=["'][^"']*\bskip-link\b[^"']*["'][^>]*href=["']#main["']/i);
-    assert.match(html, /<main\b[^>]*\bid=["']main["']/i);
+    assert.match(html, /<main\b[^>]*\bid=["']main["'][^>]*\btabindex=["']-1["']/i);
     const headings = [...html.matchAll(/<h2\b[^>]*\bid=["'](card-[^"']+)["'][^>]*>([^<]+)<\/h2>/gi)];
     assert.equal(headings.length, 6, 'expected six card h2 headings');
     for (const [, id] of headings) {
@@ -135,6 +135,15 @@ describe('index.html', () => {
       /<aside\b[^>]*\bid=["']refresh-bar["'][^>]*\baria-label=["'][^"']*["']/i,
     );
     assert.match(html, /\.card-row-value\s+a\s*\{[^}]*text-decoration:\s*underline/s);
+  });
+
+  it('exposes contrast and focus colors as CSS tokens', () => {
+    assert.match(html, /--link-card:\s*#2f81f7/i);
+    assert.match(html, /--link-muted:\s*#9aa4af/i);
+    assert.match(html, /--focus-ring:\s*var\(--accent\)/i);
+    assert.match(html, /\.card-row-value\s+a\s*\{[^}]*color:\s*var\(--link-card\)/s);
+    assert.match(html, /\.header-meta\s+a\s*\{[^}]*color:\s*var\(--link-muted\)/s);
+    assert.match(html, /a:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--focus-ring\)/s);
   });
 
   it('preloads critical fonts and serves modern image formats with dimensions', () => {

@@ -65,6 +65,10 @@
       --yellow: #d29922;
       --red: #f85149;
       --navy: #1a2233;
+      /* Contrast tokens (WCAG AA on dark surfaces; same hex as prior hardcodes). */
+      --link-card: #2f81f7; /* ≥4.5:1 on --surface; ≥3:1 vs --text for in-block links */
+      --link-muted: #9aa4af; /* brighter muted for header/footer links on --navy/--surface */
+      --focus-ring: var(--accent);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -78,9 +82,13 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     a:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 3px;
       border-radius: 2px;
+    }
+    /* Skip target: receive focus without a visible ring (keyboard still lands in main). */
+    #main:focus {
+      outline: none;
     }
     .skip-link {
       position: absolute;
@@ -99,7 +107,7 @@
       text-decoration: none;
     }
     .skip-link:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--focus-ring);
       outline-offset: 3px;
     }
 
@@ -132,7 +140,7 @@
     }
     /* Slightly brighter muted for AA on --navy refresh bar and card surfaces. */
     .header-meta a {
-      color: #9aa4af;
+      color: var(--link-muted);
       text-decoration: underline;
       text-underline-offset: 0.14em;
       text-decoration-color: rgba(154, 164, 175, 0.45);
@@ -213,7 +221,7 @@
       text-decoration: underline;
       text-underline-offset: 0.12em;
       /* Deeper blue vs --text (≥3:1) while keeping ≥4.5:1 on --surface. */
-      color: #2f81f7;
+      color: var(--link-card);
     }
     .card-row-value a:hover { color: var(--accent); }
 
@@ -309,7 +317,7 @@
       margin-top: 1rem;
     }
     footer a {
-      color: #9aa4af;
+      color: var(--link-muted);
       text-decoration: underline;
       text-underline-offset: 0.14em;
       text-decoration-color: rgba(154, 164, 175, 0.45);
@@ -346,7 +354,7 @@
   </nav>
 </header>
 
-<main id="main">
+<main id="main" tabindex="-1">
 
   <!-- Card 1: GitHub Activity -->
   <section class="card" aria-labelledby="card-github">
