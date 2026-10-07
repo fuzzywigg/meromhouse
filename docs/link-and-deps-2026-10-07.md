@@ -61,8 +61,8 @@ Recorded after the changes on this branch:
 
 | Command | Result |
 |---------|--------|
-| `npm run check:links` | ok (24 internal refs; known routes `/`, `/api/github-stats`, `/api/health`) |
-| `npm test` | all pass |
-| `npm run validate:html` | pass |
-| `CI=true npm run test:e2e` | pass |
-| `npm audit` | reported separately in CI (non-blocking) |
+| `npm run check:links` | **ok** (24 internal refs; known routes `/`, `/api/github-stats`, `/api/health`) |
+| `npm test` | **67/67 pass** |
+| `npm run validate:html` | **pass** |
+| `CI=true npm run test:e2e` | **20/20 pass** |
+| `npm audit` | **0 vulnerabilities** (also non-blocking in CI via `continue-on-error`) |
