@@ -4,31 +4,33 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const html = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '..', 'index.html'),
-  'utf8',
-);
-
-function inlineScripts(source) {
-  const blocks = [];
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-  let match;
-  while ((match = re.exec(source))) {
-    if (!/\ssrc\s*=/i.test(match[1] || '')) blocks.push(match[2]);
-  }
-  return blocks.join('\n');
-}
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const html = readFileSync(join(root, 'index.html'), 'utf8');
+const dashboardJs = readFileSync(join(root, 'assets', 'dashboard.js'), 'utf8');
 
 describe('index.html', () => {
-  it('has an element for every id the inline script uses', () => {
-    const script = inlineScripts(html);
+  it('has an element for every id the dashboard script uses', () => {
     const ids = new Set();
     const re = /(?:getElementById|setEl)\(\s*['"]([^'"]+)['"]/g;
     let match;
-    while ((match = re.exec(script))) ids.add(match[1]);
+    while ((match = re.exec(dashboardJs))) ids.add(match[1]);
     assert.ok(ids.size > 0, 'expected the script to reference element ids');
     for (const id of ids) {
       assert.match(html, new RegExp(`\\sid=["']${id}["']`), `missing element id ${id}`);
+    }
+  });
+
+  it('loads dashboard.js with defer and no third-party script src', () => {
+    assert.match(html, /<script\b[^>]*\ssrc=["']\/assets\/dashboard\.js["'][^>]*\sdefer\b/i);
+    const re = /<script\b[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = re.exec(html))) {
+      const src = match[1];
+      assert.doesNotMatch(src, /^\/\//, src);
+      if (/^https?:\/\//i.test(src)) {
+        const host = new URL(src).host;
+        assert.ok(host === 'meromhouse.org' || host === 'www.meromhouse.org', src);
+      }
     }
   });
 
@@ -46,19 +48,6 @@ describe('index.html', () => {
     assert.ok(seen > 0, 'expected external links');
   });
 
-  it('does not load a third-party script src', () => {
-    const re = /<script\b[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
-    let match;
-    while ((match = re.exec(html))) {
-      const src = match[1];
-      assert.doesNotMatch(src, /^\/\//, src);
-      if (/^https?:\/\//i.test(src)) {
-        const host = new URL(src).host;
-        assert.ok(host === 'meromhouse.org' || host === 'www.meromhouse.org', src);
-      }
-    }
-  });
-
   it('includes description, Open Graph, and Twitter meta tags', () => {
     const required = [
       /<meta\s+name=["']description["']/i,
@@ -73,5 +62,15 @@ describe('index.html', () => {
       /<meta\s+name=["']twitter:image["']/i,
     ];
     for (const pattern of required) assert.match(html, pattern);
+  });
+
+  it('preloads critical fonts and serves modern image formats with dimensions', () => {
+    assert.match(html, /rel=["']preload["'][^>]*as=["']font["']/i);
+    assert.match(html, /source-sans-3-latin-400-normal\.woff2/);
+    assert.match(html, /<picture>[\s\S]*og-image-600\.avif[\s\S]*og-image-600\.webp[\s\S]*<\/picture>/i);
+    assert.match(
+      html,
+      /<img\b[^>]*\bwidth=["']320["'][^>]*\bheight=["']168["'][^>]*\bloading=["']lazy["']/i,
+    );
   });
 });
