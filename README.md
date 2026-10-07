@@ -61,7 +61,7 @@ flowchart LR
 | X API | Planned (not wired) | Followers |
 | YouTube API | Planned (not wired) | Subscribers |
 
-GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
+GitHub Activity calls `/api/github-stats`. KV hits older than the one-hour TTL (by `cached_at`) are rejected and refetched. The client also treats an age-stale `cached_at` as unavailable. Both polls use a generation + `AbortController` gate so a visibility hide/show race does not paint a superseded response or flash unavailable on abort. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
 
 ## Deploy
 

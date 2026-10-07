@@ -392,8 +392,59 @@
 
 <script>
   const GITHUB_STATS_URL = '/api/github-stats';
+  const HEALTH_URL = '/api/health';
   const REFRESH_MS = 5 * 60 * 1000; // 5 min
+  // Match server KV TTL; age-stale payloads paint unavailable instead of old numbers.
+  const STATS_MAX_AGE_MS = 3600 * 1000;
   let refreshTimer = null;
+  let healthTimer = null;
+
+  // Generation + AbortController gates (mirrors functions/lib/poll-session.js).
+  // Visibility flips and overlapping refreshes must not paint a superseded result.
+  let githubPollGen = 0;
+  let githubPollController = null;
+  let healthPollGen = 0;
+  let healthPollController = null;
+
+  function beginPoll(kind) {
+    if (kind === 'github') {
+      githubPollGen += 1;
+      if (githubPollController) githubPollController.abort();
+      githubPollController = new AbortController();
+      return { gen: githubPollGen, signal: githubPollController.signal };
+    }
+    healthPollGen += 1;
+    if (healthPollController) healthPollController.abort();
+    healthPollController = new AbortController();
+    return { gen: healthPollGen, signal: healthPollController.signal };
+  }
+
+  function invalidatePolls() {
+    githubPollGen += 1;
+    healthPollGen += 1;
+    if (githubPollController) {
+      githubPollController.abort();
+      githubPollController = null;
+    }
+    if (healthPollController) {
+      healthPollController.abort();
+      healthPollController = null;
+    }
+  }
+
+  function shouldApplyGitHub(gen, signal) {
+    return gen === githubPollGen && !signal.aborted;
+  }
+
+  function shouldApplyHealth(gen, signal) {
+    return gen === healthPollGen && !signal.aborted;
+  }
+
+  function shouldSurfaceFailure(currentGen, resultGen, err) {
+    if (resultGen !== currentGen) return false;
+    if (err && err.name === 'AbortError') return false;
+    return true;
+  }
 
   function setEl(id, val) {
     const el = document.getElementById(id);
@@ -405,6 +456,14 @@
     if (!dot) return;
     dot.classList.remove('loading', 'green', 'red');
     if (state) dot.classList.add(state);
+  }
+
+  function isFreshCachedAt(cachedAt) {
+    if (typeof cachedAt !== 'string') return false;
+    const parsed = Date.parse(cachedAt);
+    if (Number.isNaN(parsed)) return false;
+    const ageMs = Date.now() - parsed;
+    return ageMs >= -60000 && ageMs <= STATS_MAX_AGE_MS;
   }
 
   function showCachedAt(cachedAt) {
@@ -426,17 +485,21 @@
   }
 
   async function loadGitHub() {
+    const { gen, signal } = beginPoll('github');
     try {
-      const res = await fetch(GITHUB_STATS_URL);
+      const res = await fetch(GITHUB_STATS_URL, { signal });
       if (!res.ok) throw new Error('API error');
       const d = await res.json();
+      if (!shouldApplyGitHub(gen, signal)) return;
+      if (!isFreshCachedAt(d.cached_at)) throw new Error('stale cached_at');
       setEl('gh-stars', d.total_stars ?? '—');
       setEl('gh-repos', d.public_repos ?? '—');
       setEl('gh-commits', d.recent_commits ?? '—');
       setEl('gh-status', 'ok');
       showCachedAt(d.cached_at);
       setGitHubDot('green');
-    } catch {
+    } catch (err) {
+      if (!shouldSurfaceFailure(githubPollGen, gen, err)) return;
       showGitHubUnavailable();
     }
   }
@@ -456,9 +519,6 @@
   async function refresh() {
     await loadGitHub();
   }
-
-  const HEALTH_URL = '/api/health';
-  let healthTimer = null;
 
   function setSiteDot(state) {
     const dot = document.getElementById('site-dot');
@@ -483,10 +543,12 @@
   }
 
   async function loadHealth() {
+    const { gen, signal } = beginPoll('health');
     try {
-      const res = await fetch(HEALTH_URL);
+      const res = await fetch(HEALTH_URL, { signal });
       if (!res.ok) throw new Error('health http');
       const data = await res.json();
+      if (!shouldApplyHealth(gen, signal)) return;
       let state = 'error';
       if (data.status === 'online' || data.status === 'degraded' || data.status === 'error') {
         state = data.status;
@@ -501,7 +563,8 @@
       setEl('site-status', state);
       setSiteDot(state);
       showSiteChecked(data.updated);
-    } catch {
+    } catch (err) {
+      if (!shouldSurfaceFailure(healthPollGen, gen, err)) return;
       setEl('site-status', 'error');
       setSiteDot('error');
       showSiteChecked(null);
@@ -523,6 +586,8 @@
     if (document.hidden) {
       stopRefreshTimer();
       stopHealthTimer();
+      // Drop in-flight work so a late response cannot paint after hide/show.
+      invalidatePolls();
       return;
     }
     refresh();
