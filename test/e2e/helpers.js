@@ -5,7 +5,8 @@ export const MOCK_GITHUB_STATS = {
   total_stars: 3,
   recent_commits: 1,
   top_repos: [],
-  cached_at: '2026-01-15T12:00:00.000Z',
+  // Fresh relative to STATS_MAX_AGE_MS / isFreshCachedAt (one-hour client gate from #28).
+  cached_at: new Date().toISOString(),
 };
 
 /**
