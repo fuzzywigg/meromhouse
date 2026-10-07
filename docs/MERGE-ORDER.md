@@ -1,6 +1,6 @@
 # Merge order — open PRs (Oct 7, 2026)
 
-Snapshot: **2026-10-07**. Tip: **integration fold of #52 onto #51** (`cursor/integration-fold-52-onto-51-c333`) against `main`.
+Snapshot: **2026-10-07**. Tip: **#53** (`cursor/integration-fold-52-onto-51-c333`), folding **#52** onto **#51** against `main`.
 
 Built by fast-forwarding `cursor/ci-visual-baselines-1f18` (#52) onto `cursor/integration-fold-49-50-onto-48-ec99` (#51). #52 was already rooted on the #51 tip; no content conflicts. Every open PR **#18**, **#24–#52** is contained in or superseded by this tip.
 
@@ -61,7 +61,7 @@ Report-only CI behavior retained from prior folds (axe summary, Lighthouse `chec
 | #50 | Verify + performance pass (report-only LH) | Contained in tip (folded) | Close after tip merges |
 | #51 | Integration: fold #49 #50 onto #48 | Contained in tip (prior tip) | Close after tip merges |
 | #52 | ci: green validate via Playwright Docker visual baselines | Contained in tip (folded) | Close after tip merges |
-| **this tip** | Integration: fold #52 onto #51 | Stack tip vs `main` | **Review and merge this tip** |
+| **#53** | Integration: fold #52 onto #51 | Stack tip vs `main` | **Review and merge #53** |
 
 ## Not folded (and why)
 
@@ -74,8 +74,8 @@ No site-copy conflicts about grants, the data center, energy park, or nonprofit 
 
 ## Single recommendation
 
-**Review and merge this tip** (`cursor/integration-fold-52-onto-51-c333`) into `main`, then **close these:** #18, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50, #51, #52.
+**Review and merge #53** into `main`, then **close these:** #18, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50, #51, #52.
 
 Contained in the tip: **#18**, **#25–#40**, **#42–#52**. Superseded only (not git-ancestors): **#24**, **#41**.
 
-Do not merge the intermediates. One merge of this tip into `main` is enough.
+Do not merge the intermediates. One merge of **#53** into `main` is enough.
