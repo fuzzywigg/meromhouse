@@ -18,7 +18,34 @@
   <meta name="twitter:title" content="Andrew Pappas | Systems Builder" />
   <meta name="twitter:description" content="Deputy Assistant Commissioner at IDEM Indiana, REE researcher, AI governance builder." />
   <meta name="twitter:image" content="https://meromhouse.org/og-image.jpg" />
+  <link rel="preload" href="/fonts/source-sans-3-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/source-sans-3-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <script src="/assets/dashboard.js" defer></script>
   <style>
+    @font-face {
+      font-family: 'Source Sans 3';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/fonts/source-sans-3-latin-400-normal.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'Source Sans 3';
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: url('/fonts/source-sans-3-latin-600-normal.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'Source Sans 3';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url('/fonts/source-sans-3-latin-700-normal.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
     :root {
       --bg: #0d1117;
       --surface: #161b22;
@@ -35,7 +62,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 15px;
       line-height: 1.5;
       min-height: 100vh;
@@ -114,6 +141,7 @@
       letter-spacing: -0.03em;
       color: var(--text);
       line-height: 1;
+      min-height: 2rem;
     }
     .card-value.loading { color: var(--muted); font-size: 1.1rem; }
     .card-sub { font-size: 0.82rem; color: var(--muted); }
@@ -214,6 +242,19 @@
       padding: 0.5rem;
       background: var(--navy);
       border-bottom: 1px solid var(--border);
+    }
+    .og-preview {
+      max-width: 1100px;
+      margin: 0 auto 1.5rem;
+      padding: 0 1.25rem;
+      text-align: center;
+    }
+    .og-preview img {
+      width: min(100%, 600px);
+      height: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
     }
   </style>
 </head>
@@ -377,6 +418,22 @@
 
 </main>
 
+<figure class="og-preview">
+  <picture>
+    <source type="image/avif" srcset="/og-image-600.avif" />
+    <source type="image/webp" srcset="/og-image-600.webp" />
+    <img
+      src="/og-image-600.jpg"
+      width="600"
+      height="315"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      fetchpriority="low"
+    />
+  </picture>
+</figure>
+
 <footer>
   <p>
     <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">GitHub</a>
@@ -390,151 +447,5 @@
   <p class="footer-note">Part of the <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">fuzzywigg.ai</a> hub</p>
 </footer>
 
-<script>
-  const GITHUB_STATS_URL = '/api/github-stats';
-  const REFRESH_MS = 5 * 60 * 1000; // 5 min
-  let refreshTimer = null;
-
-  function setEl(id, val) {
-    const el = document.getElementById(id);
-    if (el) { el.textContent = val; el.classList.remove('loading'); }
-  }
-
-  function setGitHubDot(state) {
-    const dot = document.getElementById('gh-dot');
-    if (!dot) return;
-    dot.classList.remove('loading', 'green', 'red');
-    if (state) dot.classList.add(state);
-  }
-
-  function showCachedAt(cachedAt) {
-    const el = document.getElementById('last-updated');
-    if (!el) return;
-    const parsed = cachedAt ? new Date(cachedAt) : null;
-    el.textContent = parsed && !Number.isNaN(parsed.getTime())
-      ? parsed.toLocaleString()
-      : 'unavailable';
-  }
-
-  function showGitHubUnavailable() {
-    setEl('gh-stars', 'unavailable');
-    setEl('gh-repos', 'unavailable');
-    setEl('gh-commits', 'unavailable');
-    setEl('gh-status', 'unavailable');
-    showCachedAt(null);
-    setGitHubDot('red');
-  }
-
-  async function loadGitHub() {
-    try {
-      const res = await fetch(GITHUB_STATS_URL);
-      if (!res.ok) throw new Error('API error');
-      const d = await res.json();
-      setEl('gh-stars', d.total_stars ?? '—');
-      setEl('gh-repos', d.public_repos ?? '—');
-      setEl('gh-commits', d.recent_commits ?? '—');
-      setEl('gh-status', 'ok');
-      showCachedAt(d.cached_at);
-      setGitHubDot('green');
-    } catch {
-      showGitHubUnavailable();
-    }
-  }
-
-  function stopRefreshTimer() {
-    if (refreshTimer !== null) {
-      clearInterval(refreshTimer);
-      refreshTimer = null;
-    }
-  }
-
-  function startRefreshTimer() {
-    if (refreshTimer !== null || document.hidden) return;
-    refreshTimer = setInterval(refresh, REFRESH_MS);
-  }
-
-  async function refresh() {
-    await loadGitHub();
-  }
-
-  const HEALTH_URL = '/api/health';
-  let healthTimer = null;
-
-  function setSiteDot(state) {
-    const dot = document.getElementById('site-dot');
-    if (!dot) return;
-    dot.classList.remove('loading', 'green', 'yellow', 'red', 'error', 'link');
-    if (state === 'online') dot.classList.add('green');
-    else if (state === 'degraded') dot.classList.add('yellow');
-    else dot.classList.add('error');
-  }
-
-  function showSiteChecked(iso) {
-    const el = document.getElementById('site-checked');
-    if (!el) return;
-    const parsed = typeof iso === 'string' ? new Date(iso) : null;
-    if (parsed && !Number.isNaN(parsed.getTime())) {
-      el.dateTime = parsed.toISOString();
-      el.textContent = parsed.toLocaleString();
-      return;
-    }
-    el.removeAttribute('datetime');
-    el.textContent = 'unavailable';
-  }
-
-  async function loadHealth() {
-    try {
-      const res = await fetch(HEALTH_URL);
-      if (!res.ok) throw new Error('health http');
-      const data = await res.json();
-      let state = 'error';
-      if (data.status === 'online' || data.status === 'degraded' || data.status === 'error') {
-        state = data.status;
-      } else if (data.ok === true) {
-        state = 'online';
-      } else if (data.ok === false) {
-        state = 'degraded';
-      }
-      if (state !== 'error' && (typeof data.updated !== 'string' || Number.isNaN(Date.parse(data.updated)))) {
-        state = 'degraded';
-      }
-      setEl('site-status', state);
-      setSiteDot(state);
-      showSiteChecked(data.updated);
-    } catch {
-      setEl('site-status', 'error');
-      setSiteDot('error');
-      showSiteChecked(null);
-    }
-  }
-
-  function stopHealthTimer() {
-    if (healthTimer === null) return;
-    clearInterval(healthTimer);
-    healthTimer = null;
-  }
-
-  function startHealthTimer() {
-    if (healthTimer !== null || document.hidden) return;
-    healthTimer = setInterval(loadHealth, REFRESH_MS);
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stopRefreshTimer();
-      stopHealthTimer();
-      return;
-    }
-    refresh();
-    startRefreshTimer();
-    loadHealth();
-    startHealthTimer();
-  });
-
-  refresh();
-  startRefreshTimer();
-  loadHealth();
-  startHealthTimer();
-</script>
 </body>
 </html>
