@@ -126,6 +126,7 @@ test.describe('a11y basics', () => {
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('main')).toHaveCount(1);
+    await expect(page.locator('main#main')).toHaveAttribute('tabindex', '-1');
     await expect(page.locator('header')).toHaveCount(1);
     await expect(page.locator('footer')).toHaveCount(1);
     await expect(page.locator('nav.header-meta')).toHaveAttribute(
