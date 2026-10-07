@@ -8,27 +8,31 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const readme = readFileSync(join(root, 'README.md'), 'utf8');
 const deploy = readFileSync(join(root, 'DEPLOY.md'), 'utf8');
-
-function inlineScripts(source) {
-  const blocks = [];
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-  let match;
-  while ((match = re.exec(source))) {
-    if (!/\ssrc\s*=/i.test(match[1] || '')) blocks.push(match[2]);
-  }
-  return blocks.join('\n');
-}
+const dashboardJs = readFileSync(join(root, 'assets', 'dashboard.js'), 'utf8');
 
 describe('index.html', () => {
-  it('has an element for every id the inline script uses', () => {
-    const script = inlineScripts(html);
+  it('has an element for every id the dashboard script uses', () => {
     const ids = new Set();
     const re = /(?:getElementById|setEl)\(\s*['"]([^'"]+)['"]/g;
     let match;
-    while ((match = re.exec(script))) ids.add(match[1]);
+    while ((match = re.exec(dashboardJs))) ids.add(match[1]);
     assert.ok(ids.size > 0, 'expected the script to reference element ids');
     for (const id of ids) {
       assert.match(html, new RegExp(`\\sid=["']${id}["']`), `missing element id ${id}`);
+    }
+  });
+
+  it('loads dashboard.js with defer and no third-party script src', () => {
+    assert.match(html, /<script\b[^>]*\ssrc=["']\/assets\/dashboard\.js["'][^>]*\sdefer\b/i);
+    const re = /<script\b[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = re.exec(html))) {
+      const src = match[1];
+      assert.doesNotMatch(src, /^\/\//, src);
+      if (/^https?:\/\//i.test(src)) {
+        const host = new URL(src).host;
+        assert.ok(host === 'meromhouse.org' || host === 'www.meromhouse.org', src);
+      }
     }
   });
 
@@ -45,19 +49,6 @@ describe('index.html', () => {
       assert.match(tag, /\brel\s*=\s*["'][^"']*\bnoreferrer\b/i, tag);
     }
     assert.ok(seen > 0, 'expected external links');
-  });
-
-  it('does not load a third-party script src', () => {
-    const re = /<script\b[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
-    let match;
-    while ((match = re.exec(html))) {
-      const src = match[1];
-      assert.doesNotMatch(src, /^\/\//, src);
-      if (/^https?:\/\//i.test(src)) {
-        const host = new URL(src).host;
-        assert.ok(host === 'meromhouse.org' || host === 'www.meromhouse.org', src);
-      }
-    }
   });
 
   it('includes description, Open Graph, and Twitter meta tags', () => {
@@ -146,54 +137,60 @@ describe('index.html', () => {
     assert.match(html, /\.card-row-value\s+a\s*\{[^}]*text-decoration:\s*underline/s);
   });
 
+  it('preloads critical fonts and serves modern image formats with dimensions', () => {
+    assert.match(html, /rel=["']preload["'][^>]*as=["']font["']/i);
+    assert.match(html, /source-sans-3-latin-400-normal\.woff2/);
+    assert.match(html, /<picture>[\s\S]*og-image-600\.avif[\s\S]*og-image-600\.webp[\s\S]*<\/picture>/i);
+    assert.match(
+      html,
+      /<img\b[^>]*\bwidth=["']320["'][^>]*\bheight=["']168["'][^>]*\bloading=["']lazy["']/i,
+    );
+  });
+
   it('pauses GitHub and health polling while the tab is hidden', () => {
-    const script = inlineScripts(html);
-    assert.match(script, /document\.addEventListener\(\s*['"]visibilitychange['"]/);
-    assert.match(script, /if\s*\(\s*document\.hidden\s*\)\s*\{[\s\S]*stopRefreshTimer\(\);[\s\S]*stopHealthTimer\(\);/);
-    assert.match(script, /function\s+startRefreshTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
-    assert.match(script, /function\s+startHealthTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
-    assert.match(script, /healthTimer\s*=\s*setInterval\(\s*loadHealth\s*,\s*REFRESH_MS\s*\)/);
-    assert.match(script, /refreshTimer\s*=\s*setInterval\(\s*refresh\s*,\s*REFRESH_MS\s*\)/);
+    assert.match(dashboardJs, /document\.addEventListener\(\s*['"]visibilitychange['"]/);
+    assert.match(dashboardJs, /if\s*\(\s*document\.hidden\s*\)\s*\{[\s\S]*stopRefreshTimer\(\);[\s\S]*stopHealthTimer\(\);/);
+    assert.match(dashboardJs, /function\s+startRefreshTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
+    assert.match(dashboardJs, /function\s+startHealthTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
+    assert.match(dashboardJs, /healthTimer\s*=\s*setInterval\(\s*loadHealth\s*,\s*REFRESH_MS\s*\)/);
+    assert.match(dashboardJs, /refreshTimer\s*=\s*setInterval\(\s*refresh\s*,\s*REFRESH_MS\s*\)/);
   });
 
   it('schedules live polls after first paint and marks fetches low priority', () => {
-    const script = inlineScripts(html);
-    assert.match(script, /function\s+bootLivePolls\s*\(/);
-    assert.match(script, /function\s+scheduleLivePolls\s*\(/);
-    assert.match(script, /requestAnimationFrame/);
-    assert.match(script, /scheduleLivePolls\s*\(\s*\)\s*;/);
-    assert.match(script, /priority:\s*['"]low['"]/);
+    assert.match(dashboardJs, /function\s+bootLivePolls\s*\(/);
+    assert.match(dashboardJs, /function\s+scheduleLivePolls\s*\(/);
+    assert.match(dashboardJs, /requestAnimationFrame/);
+    assert.match(dashboardJs, /scheduleLivePolls\s*\(\s*\)\s*;/);
+    assert.match(dashboardJs, /priority:\s*['"]low['"]/);
   });
 
   it('times out health and github-stats fetches and rejects a bad stats shape', () => {
-    const script = inlineScripts(html);
-    assert.match(script, /CLIENT_FETCH_TIMEOUT_MS\s*=\s*10000/);
-    assert.match(script, /AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)/);
-    assert.match(script, /function validGitHubStats\s*\(/);
-    assert.match(script, /d\.partial\s*===\s*true/);
-    assert.match(script, /setEl\('gh-status',\s*'partial'\)/);
+    assert.match(dashboardJs, /CLIENT_FETCH_TIMEOUT_MS\s*=\s*10000/);
+    assert.match(dashboardJs, /AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)/);
+    assert.match(dashboardJs, /function validGitHubStats\s*\(/);
+    assert.match(dashboardJs, /d\.partial\s*===\s*true/);
+    assert.match(dashboardJs, /setEl\('gh-status',\s*'partial'\)/);
   });
 
   it('gates polls with generation + AbortController and rejects stale cached_at', () => {
-    const script = inlineScripts(html);
-    assert.match(script, /function\s+beginPoll\s*\(/);
-    assert.match(script, /function\s+invalidatePolls\s*\(/);
-    assert.match(script, /function\s+shouldSurfaceFailure\s*\(/);
-    assert.match(script, /new\s+AbortController\s*\(/);
+    assert.match(dashboardJs, /function\s+beginPoll\s*\(/);
+    assert.match(dashboardJs, /function\s+invalidatePolls\s*\(/);
+    assert.match(dashboardJs, /function\s+shouldSurfaceFailure\s*\(/);
+    assert.match(dashboardJs, /new\s+AbortController\s*\(/);
     assert.match(
-      script,
+      dashboardJs,
       /AbortSignal\.any\(\s*\[\s*signal\s*,\s*AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)\s*\]\s*\)/,
     );
-    assert.match(script, /fetch\(\s*GITHUB_STATS_URL\s*,/);
-    assert.match(script, /fetch\(\s*HEALTH_URL\s*,/);
-    assert.match(script, /isFreshCachedAt\s*\(\s*d\.cached_at\s*\)/);
-    assert.match(script, /STATS_MAX_AGE_MS\s*=\s*3600\s*\*\s*1000/);
-    assert.match(script, /err\.name\s*===\s*['"]AbortError['"]/);
+    assert.match(dashboardJs, /fetch\(\s*GITHUB_STATS_URL\s*,/);
+    assert.match(dashboardJs, /fetch\(\s*HEALTH_URL\s*,/);
+    assert.match(dashboardJs, /isFreshCachedAt\s*\(\s*d\.cached_at\s*\)/);
+    assert.match(dashboardJs, /STATS_MAX_AGE_MS\s*=\s*3600\s*\*\s*1000/);
+    assert.match(dashboardJs, /err\.name\s*===\s*['"]AbortError['"]/);
     assert.match(
-      script,
+      dashboardJs,
       /if\s*\(\s*document\.hidden\s*\)\s*\{[\s\S]*invalidatePolls\(\);/,
     );
-    assert.match(script, /showGitHubUnavailable\s*\(/);
+    assert.match(dashboardJs, /showGitHubUnavailable\s*\(/);
   });
 });
 

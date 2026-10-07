@@ -23,6 +23,15 @@ describe('_headers', () => {
     assert.match(headersFile, /connect-src 'self'/);
     assert.doesNotMatch(headersFile, /Content-Security-Policy(?!-Report-Only)\s*:/);
   });
+
+  it('keeps path-specific Cache-Control (no Cache-Control on /*) and long-lived fonts/assets', () => {
+    const star = headersFile.match(/^\/\*[\s\S]*?(?=\n\/|\n#|$)/m)?.[0] || '';
+    assert.doesNotMatch(star, /Cache-Control:/);
+    assert.match(headersFile, /^\/fonts\/\*/m);
+    assert.match(headersFile, /^\/assets\/\*/m);
+    assert.match(headersFile, /font-src 'self'/);
+    assert.match(headersFile, /script-src 'self'/);
+  });
 });
 
 describe('API security headers', () => {

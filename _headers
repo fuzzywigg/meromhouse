@@ -14,11 +14,30 @@
 /index.html
   Cache-Control: public, max-age=300
 
+# Self-hosted fonts (immutable filenames).
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # Longer TTL for sized social/image assets (filenames are stable; bump when replaced).
 /og-image.jpg
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=604800
 
 /og-image.webp
+  Cache-Control: public, max-age=604800
+
+/og-image.avif
+  Cache-Control: public, max-age=604800
+
+/og-image-600.jpg
+  Cache-Control: public, max-age=604800
+
+/og-image-600.webp
+  Cache-Control: public, max-age=604800
+
+/og-image-600.avif
+  Cache-Control: public, max-age=604800
+
+/assets/*
   Cache-Control: public, max-age=86400
 
 /public/*
@@ -39,6 +58,7 @@
 # e.g. github-stats uses Cache-Control max-age=300.
 # https://developers.cloudflare.com/pages/configuration/headers/
 #
-# CSP is Report-Only: inline style/script on index.html require 'unsafe-inline'.
-# Promote to Content-Security-Policy after console/report review (no report
-# endpoint configured yet — avoid new third-party credentials).
+# CSP is Report-Only: inline style on index.html still needs 'unsafe-inline';
+# script-src 'self' covers deferred /assets/dashboard.js; font-src 'self'
+# covers /fonts/*. Promote to Content-Security-Policy after console/report
+# review (no report endpoint configured yet — avoid new third-party credentials).

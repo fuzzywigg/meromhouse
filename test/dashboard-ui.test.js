@@ -1,5 +1,5 @@
 /**
- * DOM-level tests for the interactive dashboard client in index.html.
+ * DOM-level tests for the interactive dashboard client in assets/dashboard.js.
  * Uses linkedom + node:vm; mocks fetch so CI stays offline.
  */
 import { describe, it } from 'node:test';
@@ -12,15 +12,7 @@ import { parseHTML } from 'linkedom';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const htmlSource = readFileSync(join(ROOT, 'index.html'), 'utf8');
-
-function inlineScript(html) {
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-  let match;
-  while ((match = re.exec(html))) {
-    if (!/\ssrc\s*=/i.test(match[1] || '')) return match[2];
-  }
-  throw new Error('no inline dashboard script found');
-}
+const dashboardJs = readFileSync(join(ROOT, 'assets', 'dashboard.js'), 'utf8');
 
 async function flush() {
   // Drain microtasks from setTimeout(0) boot + async fetch handlers.
@@ -150,7 +142,7 @@ function bootDashboard({ github, health, hidden = false } = {}) {
   };
 
   createContext(context);
-  runInContext(inlineScript(htmlSource), context);
+  runInContext(dashboardJs, context);
 
   return {
     document,
