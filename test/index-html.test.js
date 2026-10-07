@@ -4,10 +4,10 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const html = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '..', 'index.html'),
-  'utf8',
-);
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const html = readFileSync(join(root, 'index.html'), 'utf8');
+const readme = readFileSync(join(root, 'README.md'), 'utf8');
+const deploy = readFileSync(join(root, 'DEPLOY.md'), 'utf8');
 
 function inlineScripts(source) {
   const blocks = [];
@@ -73,5 +73,104 @@ describe('index.html', () => {
       /<meta\s+name=["']twitter:image["']/i,
     ];
     for (const pattern of required) assert.match(html, pattern);
+  });
+
+  it('offers a skip link to main and labels each card with an h2', () => {
+    assert.match(html, /<a\b[^>]*class=["'][^"']*\bskip-link\b[^"']*["'][^>]*href=["']#main["']/i);
+    assert.match(html, /<main\b[^>]*\bid=["']main["']/i);
+    const headings = [...html.matchAll(/<h2\b[^>]*\bid=["'](card-[^"']+)["'][^>]*>([^<]+)<\/h2>/gi)];
+    assert.equal(headings.length, 6, 'expected six card h2 headings');
+    for (const [, id] of headings) {
+      assert.match(
+        html,
+        new RegExp(`<section\\b[^>]*aria-labelledby=["']${id}["']`, 'i'),
+        `missing section for ${id}`,
+      );
+    }
+  });
+
+  it('hides decorative status dots and card icons from assistive tech', () => {
+    const icons = [...html.matchAll(/<span\b[^>]*class=["'][^"']*\bcard-icon\b[^"']*["'][^>]*>/gi)];
+    assert.ok(icons.length >= 6, 'expected card icons');
+    for (const [tag] of icons) {
+      assert.match(tag, /\baria-hidden=["']true["']/i, tag);
+    }
+
+    const dots = [...html.matchAll(/<span\b[^>]*class=["'][^"']*\bstatus-dot\b[^"']*["'][^>]*>/gi)];
+    assert.ok(dots.length >= 3, 'expected status dots');
+    for (const [tag] of dots) {
+      assert.match(tag, /\baria-hidden=["']true["']/i, tag);
+    }
+  });
+
+  it('keeps narrow layouts from forcing single-line flex rows', () => {
+    assert.match(html, /\.header-meta\s*\{[^}]*flex-wrap:\s*wrap/s);
+    assert.match(html, /\.card-row\s*\{[^}]*flex-wrap:\s*wrap/s);
+    assert.match(html, /\.project-row\s*\{[^}]*flex-wrap:\s*wrap/s);
+    assert.match(html, /grid-template-columns:\s*repeat\(\s*auto-fill,\s*minmax\(\s*min\(\s*320px,\s*100%\s*\)/i);
+  });
+
+  it('labels the refresh timestamp as GitHub-only', () => {
+    assert.match(html, /GitHub last updated:\s*<span\b[^>]*\bid=["']last-updated["']/i);
+    assert.doesNotMatch(html, /\|\s*Last updated:/i);
+  });
+
+  it('pauses GitHub and health polling while the tab is hidden', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /document\.addEventListener\(\s*['"]visibilitychange['"]/);
+    assert.match(script, /if\s*\(\s*document\.hidden\s*\)\s*\{[\s\S]*stopRefreshTimer\(\);[\s\S]*stopHealthTimer\(\);/);
+    assert.match(script, /function\s+startRefreshTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
+    assert.match(script, /function\s+startHealthTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
+    assert.match(script, /healthTimer\s*=\s*setInterval\(\s*loadHealth\s*,\s*REFRESH_MS\s*\)/);
+    assert.match(script, /refreshTimer\s*=\s*setInterval\(\s*refresh\s*,\s*REFRESH_MS\s*\)/);
+  });
+
+  it('times out health and github-stats fetches and rejects a bad stats shape', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /CLIENT_FETCH_TIMEOUT_MS\s*=\s*10000/);
+    assert.match(script, /AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)/);
+    assert.match(script, /function validGitHubStats\s*\(/);
+    assert.match(script, /d\.partial\s*===\s*true/);
+    assert.match(script, /setEl\('gh-status',\s*'partial'\)/);
+  });
+
+  it('gates polls with generation + AbortController and rejects stale cached_at', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /function\s+beginPoll\s*\(/);
+    assert.match(script, /function\s+invalidatePolls\s*\(/);
+    assert.match(script, /function\s+shouldSurfaceFailure\s*\(/);
+    assert.match(script, /new\s+AbortController\s*\(/);
+    assert.match(
+      script,
+      /AbortSignal\.any\(\s*\[\s*signal\s*,\s*AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)\s*\]\s*\)/,
+    );
+    assert.match(script, /fetch\(\s*GITHUB_STATS_URL\s*,/);
+    assert.match(script, /fetch\(\s*HEALTH_URL\s*,/);
+    assert.match(script, /isFreshCachedAt\s*\(\s*d\.cached_at\s*\)/);
+    assert.match(script, /STATS_MAX_AGE_MS\s*=\s*3600\s*\*\s*1000/);
+    assert.match(script, /err\.name\s*===\s*['"]AbortError['"]/);
+    assert.match(
+      script,
+      /if\s*\(\s*document\.hidden\s*\)\s*\{[\s\S]*invalidatePolls\(\);/,
+    );
+    assert.match(script, /showGitHubUnavailable\s*\(/);
+  });
+});
+
+describe('docs: live poll pause-when-hidden', () => {
+  it('documents /api/health polling only while the tab is visible', () => {
+    assert.match(
+      readme,
+      /fetch \/api\/health<br\/>while the tab is visible/,
+    );
+    assert.match(
+      readme,
+      /`\/api\/health`\s*\|\s*Live same-origin fetch every 5 minutes while the tab is visible;\s*paused when the tab is hidden/i,
+    );
+    assert.match(
+      readme,
+      /Both live polls use a 5-minute interval and pause on `visibilitychange` when `document\.hidden` is true/i,
+    );
+    assert.match(deploy, /\/api\/health` every 5 minutes while the tab is visible;\s*both pause when the tab is hidden/i);
   });
 });

@@ -12,8 +12,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Check required files
@@ -32,6 +32,11 @@ jobs:
           test -f wrangler.toml
           test -f .cursor/environment.json
           test -f .github/workflows/ci.yml
+          test -f package.json
+          test -f package-lock.json
+          test -f playwright.config.mjs
+          test -f test/e2e/dashboard.smoke.spec.js
+          test -f test/e2e/a11y-prefs.smoke.spec.js
       - name: Check for committed secret material
         run: |
           ! grep -RInE '(api[_-]?key|secret|token|password)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}' \
@@ -41,5 +46,37 @@ jobs:
             --exclude='*.yml' \
             --exclude='*.yaml' \
             .
+      - name: Install npm dependencies
+        run: npm ci
       - name: Run Pages Function unit tests
-        run: node --test test/*.test.js
+        run: npm test
+      - name: Local wrangler Pages smoke
+        run: |
+          set -euo pipefail
+          PORT=8799
+          npx --yes wrangler@4 pages dev . --port "$PORT" --ip 127.0.0.1 > /tmp/wrangler-smoke.log 2>&1 &
+          WPID=$!
+          cleanup() { kill "$WPID" 2>/dev/null || true; wait "$WPID" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 45); do
+            if curl -sf "http://127.0.0.1:${PORT}/api/health" >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          grep -q '"status":"online"' /tmp/health.json
+          grep -q '"checks"' /tmp/health.json
+          code_root=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/")
+          code_og=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/og-image.jpg")
+          code_gh=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/github-stats")
+          test "$code_root" = "200"
+          test "$code_og" = "200"
+          test "$code_gh" = "200"
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright dashboard smoke
+        run: npm run test:e2e
+        env:
+          CI: true
