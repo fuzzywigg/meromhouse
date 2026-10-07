@@ -11,6 +11,7 @@
 // but repos and/or events fail or time out, the response is 200 with
 // partial: true and is not written to KV.
 
+import { SECURITY_HEADERS } from '../_shared/security-headers.js';
 import { CACHE_TTL_SECONDS, isCachedAtFresh } from '../lib/stats-cache.js';
 
 const GITHUB_USER = 'fuzzywigg';
@@ -22,8 +23,9 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 export async function onRequest(context) {
   const { env } = context;
 
-  // CORS headers for browser fetch
+  // CORS headers for browser fetch, plus shared security headers
   const corsHeaders = {
+    ...SECURITY_HEADERS,
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',

@@ -3,10 +3,13 @@
 // Never calls GitHub (github-stats owns that path). Callers map status
 // "online"/"degraded"/"error", ok:false, or a failed/timed-out fetch.
 
+import { SECURITY_HEADERS } from '../_shared/security-headers.js';
+
 const VERSION = '0.1.0';
 const KV_PROBE_TIMEOUT_MS = 1500;
 
 const corsHeaders = {
+  ...SECURITY_HEADERS,
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
