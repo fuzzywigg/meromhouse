@@ -23,9 +23,25 @@ function inlineScript(html) {
 }
 
 async function flush() {
-  await new Promise((r) => setImmediate(r));
-  await new Promise((r) => setImmediate(r));
-  await new Promise((r) => setImmediate(r));
+  // Drain microtasks from setTimeout(0) boot + async fetch handlers.
+  for (let i = 0; i < 8; i += 1) {
+    await new Promise((r) => setImmediate(r));
+  }
+}
+
+function freshCachedAt() {
+  return new Date().toISOString();
+}
+
+function defaultGitHubBody() {
+  return {
+    total_stars: 11,
+    public_repos: 6,
+    followers: 2,
+    recent_commits: 3,
+    top_repos: [],
+    cached_at: freshCachedAt(),
+  };
 }
 
 function bootDashboard({ github, health, hidden = false } = {}) {
@@ -33,17 +49,12 @@ function bootDashboard({ github, health, hidden = false } = {}) {
   const fetchCalls = [];
   let hiddenFlag = hidden;
 
-  const fetchMock = async (url) => {
+  const fetchMock = async (url, _opts) => {
     fetchCalls.push(String(url));
     if (String(url).includes('/api/github-stats')) {
       if (github?.throw) throw github.throw;
       const status = github?.status ?? 200;
-      const body = github?.body ?? {
-        total_stars: 11,
-        public_repos: 6,
-        recent_commits: 3,
-        cached_at: '2026-10-07T12:00:00.000Z',
-      };
+      const body = github?.body ?? defaultGitHubBody();
       return {
         ok: status >= 200 && status < 300,
         status,
@@ -58,7 +69,7 @@ function bootDashboard({ github, health, hidden = false } = {}) {
       const body = health?.body ?? {
         ok: true,
         status: 'online',
-        updated: '2026-10-07T12:00:00.000Z',
+        updated: freshCachedAt(),
       };
       return {
         ok: status >= 200 && status < 300,
@@ -72,6 +83,7 @@ function bootDashboard({ github, health, hidden = false } = {}) {
   };
 
   const intervals = [];
+  const timeouts = [];
   const context = {
     document,
     window,
@@ -85,6 +97,30 @@ function bootDashboard({ github, health, hidden = false } = {}) {
       const idx = intervals.findIndex((t) => t.id === id);
       if (idx !== -1) intervals.splice(idx, 1);
     },
+    // Stack schedules bootLivePolls via setTimeout(…, 0) after first paint.
+    setTimeout(fn, ms = 0, ...args) {
+      const id = timeouts.length + 1;
+      timeouts.push({ id });
+      if (ms <= 0) {
+        queueMicrotask(() => {
+          if (timeouts.some((t) => t.id === id)) fn(...args);
+        });
+      } else {
+        const real = globalThis.setTimeout(() => {
+          if (timeouts.some((t) => t.id === id)) fn(...args);
+        }, ms);
+        timeouts[timeouts.length - 1].real = real;
+      }
+      return id;
+    },
+    clearTimeout(id) {
+      const idx = timeouts.findIndex((t) => t.id === id);
+      if (idx === -1) return;
+      const [entry] = timeouts.splice(idx, 1);
+      if (entry.real) globalThis.clearTimeout(entry.real);
+    },
+    AbortController,
+    AbortSignal,
     console,
     Date,
     Number,
@@ -95,6 +131,7 @@ function bootDashboard({ github, health, hidden = false } = {}) {
     Math,
     parseInt,
     isNaN,
+    undefined,
   };
 
   Object.defineProperty(document, 'hidden', {
