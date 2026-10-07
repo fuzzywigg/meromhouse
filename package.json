@@ -7,7 +7,9 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:qa": "node --test test/links.test.js test/html-validate.test.js test/seo-presence.test.js test/security-headers.test.js test/dashboard-ui.test.js",
-    "test:e2e": "playwright test",
+    "test:e2e": "bash scripts/playwright-docker.sh",
+    "test:e2e:host": "playwright test",
+    "test:e2e:update-snapshots": "bash scripts/update-visual-snapshots.sh",
     "test:all": "npm test && npm run test:e2e",
     "validate:html": "html-validate index.html",
     "check:links": "node scripts/check-links.mjs",
