@@ -90,6 +90,6 @@ For caching GitHub API responses in Workers KV:
 
 ## Result
 
-Live public KPI dashboard at `meromhouse.org`. GitHub stats refresh every 5 minutes (client-side) via `/api/github-stats` (CF Pages Function).
+Live public KPI dashboard at `meromhouse.org`. Client-side polls hit `/api/github-stats` and `/api/health` every 5 minutes while the tab is visible; both pause when the tab is hidden.
 
 **Cost: $0** — CF Pages free tier includes unlimited static assets; Pages Functions share the Workers Free daily request quota (100,000/day, resets midnight UTC).
