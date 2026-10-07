@@ -1,6 +1,6 @@
 # Merge order — open PRs (Oct 7, 2026)
 
-Snapshot: **2026-10-07**. Tip: **this PR** (`cursor/integration-fold-49-50-onto-48-ec99`), folding **#49** + **#50** onto **#48** against `main`.
+Snapshot: **2026-10-07**. Tip: **#51** (`cursor/integration-fold-49-50-onto-48-ec99`), folding **#49** + **#50** onto **#48** against `main`.
 
 Built by merging `cursor/a11y-pass-9a92` (#49) then `cursor/perf-verify-pass-93df` (#50) onto `cursor/integration-collapse-28-47-9501` (#48). No content conflicts; both merges were clean (`ort`). Every open PR **#18**, **#24–#50** is contained in or superseded by this tip.
 
@@ -12,7 +12,7 @@ This guide does **not** merge, close, or retarget any PR.
 |-----|-------------:|-----|
 | **#48** | **23** / 23 | Two hard-fail axe tests per `DOCUMENT_ROUTES` (`/`): tag scan + focused-rules scan. |
 | **#49** | **22** / 22 | Those two tests were **intentionally merged** into one report-only axe scan that still covers every public HTML route and writes `test-results/a11y/*`. No route coverage was dropped; no test was skipped or renamed away. |
-| **#50** / this tip | **22** / 22 | Same suite as #49; adds report-only Lighthouse via `npm run check:perf` (not a Playwright test). |
+| **#50** / **#51** | **22** / 22 | Same suite as #49; adds report-only Lighthouse via `npm run check:perf` (not a Playwright test). |
 
 No unintentional loss — do **not** restore the hard-fail axe pair. Keep axe and Lighthouse **report-only** (`continue-on-error: true`); never make them blocking.
 
@@ -57,7 +57,7 @@ Report-only CI behavior retained from both folds (axe summary, Lighthouse `check
 | #48 | Integration: collapse #28–#47 into one tip | Contained in tip (prior integration tip) | Close after tip merges |
 | #49 | fix(a11y): report-only axe CI + structural polish | Contained in tip (folded) | Close after tip merges |
 | #50 | Verify + performance pass (report-only LH) | Contained in tip (folded) | Close after tip merges |
-| **this tip** | Integration: fold #49 #50 onto #48 | Stack tip vs `main` | **Review and merge this tip** |
+| **#51** | Integration: fold #49 #50 onto #48 | Stack tip vs `main` | **Review and merge #51** |
 
 ## Not folded (and why)
 
@@ -70,8 +70,8 @@ No site-copy conflicts about grants, the data center, energy park, or nonprofit 
 
 ## Single recommendation
 
-**Review and merge this tip** into `main`, then **close these:** #18, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50.
+**Review and merge #51** into `main`, then **close these:** #18, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47, #48, #49, #50.
 
 Contained in the tip: **#18**, **#25–#40**, **#42–#50**. Superseded only (not git-ancestors): **#24**, **#41**.
 
-Do not merge the intermediates. One merge of this tip into `main` is enough.
+Do not merge the intermediates. One merge of **#51** into `main` is enough.
