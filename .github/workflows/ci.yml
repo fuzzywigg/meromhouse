@@ -3,19 +3,31 @@ name: CI
 on:
   push:
     branches: [main]
+  # Any base branch (integration tips, stacked PRs) — not only main.
   pull_request:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update_visual_snapshots:
+        description: 'Regenerate Playwright visual baselines in the Playwright Docker image and upload artifact (does not commit; CI stays contents:read)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Check required files
         run: |
           test -f index.html
@@ -32,14 +44,112 @@ jobs:
           test -f wrangler.toml
           test -f .cursor/environment.json
           test -f .github/workflows/ci.yml
+          test -f .htmlvalidate.json
+          test -f package.json
+          test -f package-lock.json
+          test -f playwright.config.mjs
+          test -f scripts/check-links.mjs
+          test -f scripts/check-seo-presence.mjs
+          test -f scripts/check-security-headers.mjs
+          test -f scripts/check-perf.mjs
+          test -f scripts/playwright-docker.sh
+          test -f scripts/update-visual-snapshots.sh
+          test -f docs/security-headers-2026-10-07.md
+          test -f docs/perf-2026-10-07.md
+          test -f test/e2e/dashboard.smoke.spec.js
+          test -f test/e2e/a11y-axe.smoke.spec.js
+          test -f test/e2e/a11y-prefs.smoke.spec.js
+          test -f test/e2e/viewport-layout.smoke.spec.js
+          test -f test/e2e/visual.spec.js
+          test -f docs/a11y-2026-10-07.md
+          test -f test/security-headers.test.js
+          test -f test/perf.test.js
       - name: Check for committed secret material
         run: |
           ! grep -RInE '(api[_-]?key|secret|token|password)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}' \
             --exclude-dir=.git \
             --exclude-dir=.wrangler \
+            --exclude-dir=node_modules \
             --exclude='*.md' \
             --exclude='*.yml' \
             --exclude='*.yaml' \
+            --exclude='package-lock.json' \
             .
-      - name: Run Pages Function unit tests
-        run: node --test test/*.test.js
+      - name: Offline internal link and asset check
+        run: npm run check:links
+      - name: Validate HTML (local html-validate)
+        run: npm run validate:html
+      - name: Document title / meta description / lang (report-only)
+        continue-on-error: true
+        run: npm run check:seo
+      - name: npm audit (report-only)
+        continue-on-error: true
+        run: npm audit
+      - name: Run unit, link, HTML, SEO presence, security-headers fixtures, and dashboard UI tests
+        run: npm test
+      - name: Local wrangler Pages smoke
+        run: |
+          set -euo pipefail
+          PORT=8799
+          npx --yes wrangler@4 pages dev . --port "$PORT" --ip 127.0.0.1 > /tmp/wrangler-smoke.log 2>&1 &
+          WPID=$!
+          cleanup() { kill "$WPID" 2>/dev/null || true; wait "$WPID" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 45); do
+            if curl -sf "http://127.0.0.1:${PORT}/api/health" >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          grep -q '"status":"online"' /tmp/health.json
+          grep -q '"checks"' /tmp/health.json
+          code_root=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/")
+          code_og=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/og-image.jpg")
+          code_gh=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/github-stats")
+          test "$code_root" = "200"
+          test "$code_og" = "200"
+          test "$code_gh" = "200"
+      - name: Security headers on Worker responses (report-only)
+        continue-on-error: true
+        run: npm run check:security-headers
+      - name: Update Playwright visual snapshots (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && inputs.update_visual_snapshots
+        run: npm run test:e2e:update-snapshots
+      - name: Upload updated visual snapshots artifact
+        if: github.event_name == 'workflow_dispatch' && inputs.update_visual_snapshots
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: visual-snapshots
+          path: test/e2e/visual.spec.js-snapshots/
+          if-no-files-found: error
+      - name: Run Playwright e2e (Playwright Docker image; axe report-only)
+        run: npm run test:e2e
+        env:
+          CI: true
+      - name: Publish axe a11y summary (report-only; never fails the job)
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f test-results/a11y/axe-summary.md ]; then
+            echo '::group::axe-core accessibility summary (report-only)'
+            cat test-results/a11y/axe-summary.md
+            echo '::endgroup::'
+          else
+            echo 'No test-results/a11y/axe-summary.md produced (e2e may have failed before the axe scan).'
+          fi
+      - name: Lighthouse performance / best-practices (report-only)
+        continue-on-error: true
+        run: npm run check:perf
+      - name: Publish Lighthouse perf summary (report-only; never fails the job)
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f test-results/perf/summary.md ]; then
+            echo '::group::Lighthouse performance summary (report-only)'
+            cat test-results/perf/summary.md
+            echo '::endgroup::'
+          else
+            echo 'No test-results/perf/summary.md produced.'
+          fi
