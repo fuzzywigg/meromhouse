@@ -41,7 +41,7 @@ flowchart LR
   GhFn -->|"miss, no KV, or invalid cache"| GH["GitHub API<br/>user, repo pages, events"]
   GH --> GhFn
   GhFn --> Index
-  Index -->|"fetch /api/health"| Health["functions/api/health.js"]
+  Index -->|"fetch /api/health<br/>while the tab is visible"| Health["functions/api/health.js"]
   Health --> Index
   Index -.->|"static copy"| Static["Projects, research,<br/>writing, deployments"]
   Index -.->|"link, not a probe"| Hub["fuzzywigg.ai"]
@@ -51,8 +51,8 @@ flowchart LR
 
 | Source | Status | Card |
 |--------|--------|------|
-| GitHub API via `/api/github-stats` | Live. `total_stars` follows repo `Link` pages (capped). `recent_commits` sums PushEvent `payload.size` in the fetched events window for this month, not a full history. The refresh bar shows `cached_at`, or "unavailable" if the fetch fails. | GitHub Activity |
-| `/api/health` | Live same-origin fetch | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
+| GitHub API via `/api/github-stats` | Live. `total_stars` follows repo `Link` pages (capped). `recent_commits` sums PushEvent `payload.size` in the fetched events window for this month, not a full history. The refresh bar shows `cached_at`, or "unavailable" if the fetch fails. Polling pauses while the tab is hidden (same as `/api/health`). | GitHub Activity |
+| `/api/health` | Live same-origin fetch. Polling pauses while the tab is hidden (same as `/api/github-stats`) and runs again when the tab is visible. | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
 | Not probed from the browser | Link only | Uptime: fuzzywigg.ai |
 | Hardcoded in `index.html` | Static | Active Projects, REE Research |
 | Hardcoded / manual edit | Static | Writing, Deployments |
@@ -61,7 +61,7 @@ flowchart LR
 | X API | Planned (not wired) | Followers |
 | YouTube API | Planned (not wired) | Subscribers |
 
-GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
+GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. Both client polls pause while `document.hidden` and resume on `visibilitychange`. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
 
 ## Deploy
 

@@ -74,4 +74,18 @@ describe('index.html', () => {
     ];
     for (const pattern of required) assert.match(html, pattern);
   });
+
+  it('pauses github-stats and health polling while the tab is hidden', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /visibilitychange/);
+    assert.match(script, /document\.hidden/);
+    assert.match(script, /stopRefreshTimer/);
+    assert.match(script, /stopHealthTimer/);
+    assert.match(
+      script,
+      /if\s*\(\s*document\.hidden\s*\)\s*\{[^}]*stopRefreshTimer\(\)[^}]*stopHealthTimer\(\)/s,
+    );
+    assert.match(script, /GITHUB_STATS_URL\s*=\s*['"]\/api\/github-stats['"]/);
+    assert.match(script, /HEALTH_URL\s*=\s*['"]\/api\/health['"]/);
+  });
 });
