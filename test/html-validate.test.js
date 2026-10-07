@@ -24,14 +24,14 @@ describe('HTML validation', () => {
     assert.equal(report.valid, true);
   });
 
-  it('every img has a non-empty alt attribute', () => {
+  it('every img has an alt attribute', () => {
     const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
     const imgs = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+    assert.ok(imgs.length > 0, 'expected at least one img in index.html');
     for (const tag of imgs) {
       const alt = tag.match(/\balt\s*=\s*["']([^"']*)["']/i);
       assert.ok(alt, `missing alt: ${tag}`);
       // Decorative images may use alt=""; informative ones must be non-empty.
-      // This site currently has no imgs; the rule documents the requirement.
       assert.ok(alt[1] !== undefined, `empty alt attr parse failed: ${tag}`);
     }
   });
