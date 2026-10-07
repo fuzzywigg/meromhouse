@@ -77,7 +77,7 @@ describe('GET /api/github-stats', () => {
       total_stars: 3,
       recent_commits: 4,
       top_repos: [],
-      cached_at: '2026-01-01T00:00:00.000Z',
+      cached_at: new Date().toISOString(),
     });
     const kv = createMemoryKv({ 'github-stats-v1': cached });
     let fetchCalls = 0;
@@ -101,6 +101,26 @@ describe('GET /api/github-stats', () => {
     } finally {
       globalThis.fetch = original;
     }
+  });
+
+  it('refetches when the KV entry is age-stale by cached_at', async () => {
+    const stale = JSON.stringify({
+      public_repos: 1,
+      followers: 2,
+      total_stars: 3,
+      recent_commits: 4,
+      top_repos: [],
+      cached_at: '2026-01-01T00:00:00.000Z',
+    });
+    const kv = createMemoryKv({ 'github-stats-v1': stale });
+    await withMockedFetch(githubFetchHandler, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: { KV: kv } });
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get('X-Cache'), 'MISS');
+      const body = await res.json();
+      assert.equal(body.public_repos, 12);
+      assert.equal(body.total_stars, 10 + 5 + 99 + 7);
+    });
   });
 
   it('aggregates GitHub stats on cache miss and writes KV', async () => {
@@ -295,7 +315,8 @@ describe('GET /api/github-stats', () => {
     });
   });
 
-  it('tolerates non-ok repos/events responses', async () => {
+  it('marks partial and skips KV when repos/events fail', async () => {
+    const kv = createMemoryKv();
     await withMockedFetch((url) => {
       if (url.includes('/repos')) return jsonResponse({ message: 'fail' }, 500);
       if (url.includes('/events')) return jsonResponse({ message: 'fail' }, 500);
@@ -303,13 +324,86 @@ describe('GET /api/github-stats', () => {
     }, async () => {
       const res = await onRequest({
         request: mockRequest('GET'),
-        env: {},
+        env: { KV: kv },
       });
       assert.equal(res.status, 200);
+      assert.equal(res.headers.get('Cache-Control'), 'no-store');
       const body = await res.json();
+      assert.equal(body.partial, true);
+      assert.ok(body.warnings.includes('repos_upstream'));
+      assert.ok(body.warnings.includes('events_upstream'));
       assert.equal(body.total_stars, 0);
       assert.equal(body.recent_commits, 0);
       assert.deepEqual(body.top_repos, []);
+      assert.equal(body.public_repos, 12);
+      assert.equal(await kv.get('github-stats-v1'), null);
+    });
+  });
+
+  it('marks partial on upstream timeout without caching', async () => {
+    const kv = createMemoryKv();
+    await withMockedFetch((url) => {
+      if (url.includes('/repos')) {
+        const err = new Error('The operation was aborted due to timeout');
+        err.name = 'TimeoutError';
+        throw err;
+      }
+      if (url.includes('/events')) {
+        const err = new Error('The operation was aborted due to timeout');
+        err.name = 'TimeoutError';
+        throw err;
+      }
+      return jsonResponse(USER);
+    }, async () => {
+      const res = await onRequest({
+        request: mockRequest('GET'),
+        env: { KV: kv },
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.partial, true);
+      assert.ok(body.warnings.includes('repos_timeout'));
+      assert.ok(body.warnings.includes('events_timeout'));
+      assert.equal(await kv.get('github-stats-v1'), null);
+    });
+  });
+
+  it('rejects a cached payload marked partial', async () => {
+    const cached = JSON.stringify({
+      public_repos: 1,
+      followers: 2,
+      total_stars: 3,
+      recent_commits: 4,
+      top_repos: [],
+      cached_at: '2026-01-01T00:00:00.000Z',
+      partial: true,
+      warnings: ['events_upstream'],
+    });
+    const kv = createMemoryKv({ 'github-stats-v1': cached });
+    await withMockedFetch(githubFetchHandler, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: { KV: kv } });
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get('X-Cache'), 'MISS');
+      const body = await res.json();
+      assert.equal(body.public_repos, 12);
+      assert.equal(body.partial, undefined);
+    });
+  });
+
+  it('rejects a cached payload with a bad top_repos entry', async () => {
+    const cached = JSON.stringify({
+      public_repos: 1,
+      followers: 2,
+      total_stars: 3,
+      recent_commits: 4,
+      top_repos: [{ name: 'x', stars: 'nope', url: 'https://github.com/fuzzywigg/x' }],
+      cached_at: '2026-01-01T00:00:00.000Z',
+    });
+    const kv = createMemoryKv({ 'github-stats-v1': cached });
+    await withMockedFetch(githubFetchHandler, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: { KV: kv } });
+      assert.equal(res.headers.get('X-Cache'), 'MISS');
+      const body = await res.json();
       assert.equal(body.public_repos, 12);
     });
   });
