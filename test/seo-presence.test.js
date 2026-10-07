@@ -17,7 +17,6 @@ import {
 } from '../scripts/check-seo-presence.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-// join still used for ROOT only
 
 describe('SEO presence scanner (fixtures)', () => {
   it('accepts a minimal page with lang, title, and meta description tag', () => {
