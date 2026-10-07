@@ -163,6 +163,14 @@
       text-align: right;
       overflow-wrap: anywhere;
     }
+    /* Inline card links: underline so they are not color-only (WCAG 1.4.1). */
+    .card-row-value a {
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+      /* Deeper blue vs --text (≥3:1) while keeping ≥4.5:1 on --surface. */
+      color: #2f81f7;
+    }
+    .card-row-value a:hover { color: var(--accent); }
 
     /* ── Badges ── */
     .badge {
@@ -260,7 +268,7 @@
 
 <a class="skip-link" href="#main">Skip to content</a>
 
-<div id="refresh-bar">GitHub activity and meromhouse.org status refresh every 5 minutes while this tab is visible. Other cards are static. &nbsp;|&nbsp; GitHub last updated: <span id="last-updated" aria-live="polite">—</span></div>
+<aside id="refresh-bar" aria-label="Refresh status">GitHub activity and meromhouse.org status refresh every 5 minutes while this tab is visible. Other cards are static. &nbsp;|&nbsp; GitHub last updated: <span id="last-updated" aria-live="polite">—</span></aside>
 
 <header>
   <h1>Andrew <span>Pappas</span></h1>
