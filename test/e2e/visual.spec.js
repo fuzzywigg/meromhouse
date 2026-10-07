@@ -14,20 +14,32 @@ function routeSlug(route) {
 for (const [viewportName, viewport] of Object.entries(VISUAL_VIEWPORTS)) {
   test.describe(`visual regression · ${viewportName}`, () => {
     test.use({
-      viewport,
+      viewport: { width: viewport.width, height: viewport.height },
       locale: 'en-US',
       timezoneId: 'America/New_York',
       colorScheme: 'dark',
+      deviceScaleFactor: 1,
+      hasTouch: viewportName === 'mobile',
+      isMobile: viewportName === 'mobile',
     });
 
     for (const route of DOCUMENT_ROUTES) {
       test(`${route} @ ${viewportName}`, async ({ page }) => {
         await installVisualClock(page);
         await mockApisForVisual(page);
-        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
 
         await page.goto(route);
-        await page.evaluate(() => document.fonts.ready);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        // Self-hosted Source Sans 3 must win over system fallbacks for full-page height.
+        await expect
+          .poll(() =>
+            page.evaluate(() => document.fonts.check('15px "Source Sans 3"')),
+          )
+          .toBe(true);
+
         await expect(page.locator('#site-status')).toHaveText('online', {
           timeout: 10_000,
         });
@@ -42,6 +54,8 @@ for (const [viewportName, viewport] of Object.entries(VISUAL_VIEWPORTS)) {
           {
             fullPage: true,
             animations: 'disabled',
+            caret: 'hide',
+            scale: 'css',
           },
         );
       });

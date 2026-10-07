@@ -3,9 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
-  # Allow stacked PRs whose base is an integration tip (not only main).
+  # Any base branch (integration tips, stacked PRs) — not only main.
   pull_request:
   workflow_dispatch:
+    inputs:
+      update_visual_snapshots:
+        description: 'Regenerate Playwright visual baselines in the Playwright Docker image and upload artifact (does not commit; CI stays contents:read)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,12 +52,15 @@ jobs:
           test -f scripts/check-seo-presence.mjs
           test -f scripts/check-security-headers.mjs
           test -f scripts/check-perf.mjs
+          test -f scripts/playwright-docker.sh
+          test -f scripts/update-visual-snapshots.sh
           test -f docs/security-headers-2026-10-07.md
           test -f docs/perf-2026-10-07.md
           test -f test/e2e/dashboard.smoke.spec.js
           test -f test/e2e/a11y-axe.smoke.spec.js
           test -f test/e2e/a11y-prefs.smoke.spec.js
           test -f test/e2e/viewport-layout.smoke.spec.js
+          test -f test/e2e/visual.spec.js
           test -f docs/a11y-2026-10-07.md
           test -f test/security-headers.test.js
           test -f test/perf.test.js
@@ -106,9 +114,17 @@ jobs:
       - name: Security headers on Worker responses (report-only)
         continue-on-error: true
         run: npm run check:security-headers
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Run Playwright e2e (axe-core is report-only; see test-results/a11y)
+      - name: Update Playwright visual snapshots (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && inputs.update_visual_snapshots
+        run: npm run test:e2e:update-snapshots
+      - name: Upload updated visual snapshots artifact
+        if: github.event_name == 'workflow_dispatch' && inputs.update_visual_snapshots
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: visual-snapshots
+          path: test/e2e/visual.spec.js-snapshots/
+          if-no-files-found: error
+      - name: Run Playwright e2e (Playwright Docker image; axe report-only)
         run: npm run test:e2e
         env:
           CI: true
