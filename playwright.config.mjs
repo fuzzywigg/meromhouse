@@ -11,10 +11,20 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   timeout: 30_000,
-  expect: { timeout: 10_000 },
+  expect: {
+    timeout: 10_000,
+    // CI-friendly visual threshold: tolerate antialias / font hinting drift.
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.02,
+      threshold: 0.2,
+      animations: 'disabled',
+    },
+  },
   use: {
     baseURL,
     trace: 'on-first-retry',
+    locale: 'en-US',
+    timezoneId: 'America/New_York',
   },
   webServer: {
     command: `npx --yes wrangler@4 pages dev . --port ${PORT} --ip 127.0.0.1`,
