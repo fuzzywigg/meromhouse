@@ -6,16 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Check required files
         run: |
           test -f index.html
@@ -32,14 +36,71 @@ jobs:
           test -f wrangler.toml
           test -f .cursor/environment.json
           test -f .github/workflows/ci.yml
+          test -f .htmlvalidate.json
+          test -f package.json
+          test -f package-lock.json
+          test -f playwright.config.mjs
+          test -f scripts/check-links.mjs
+          test -f scripts/check-seo-presence.mjs
+          test -f scripts/check-security-headers.mjs
+          test -f docs/security-headers-2026-10-07.md
+          test -f test/e2e/dashboard.smoke.spec.js
+          test -f test/e2e/a11y-prefs.smoke.spec.js
+          test -f test/e2e/viewport-layout.smoke.spec.js
+          test -f test/security-headers.test.js
       - name: Check for committed secret material
         run: |
           ! grep -RInE '(api[_-]?key|secret|token|password)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}' \
             --exclude-dir=.git \
             --exclude-dir=.wrangler \
+            --exclude-dir=node_modules \
             --exclude='*.md' \
             --exclude='*.yml' \
             --exclude='*.yaml' \
+            --exclude='package-lock.json' \
             .
-      - name: Run Pages Function unit tests
-        run: node --test test/*.test.js
+      - name: Offline internal link and asset check
+        run: npm run check:links
+      - name: Validate HTML (local html-validate)
+        run: npm run validate:html
+      - name: Document title / meta description / lang (report-only)
+        continue-on-error: true
+        run: npm run check:seo
+      - name: npm audit (report-only)
+        continue-on-error: true
+        run: npm audit
+      - name: Run unit, link, HTML, SEO presence, security-headers fixtures, and dashboard UI tests
+        run: npm test
+      - name: Local wrangler Pages smoke
+        run: |
+          set -euo pipefail
+          PORT=8799
+          npx --yes wrangler@4 pages dev . --port "$PORT" --ip 127.0.0.1 > /tmp/wrangler-smoke.log 2>&1 &
+          WPID=$!
+          cleanup() { kill "$WPID" 2>/dev/null || true; wait "$WPID" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 45); do
+            if curl -sf "http://127.0.0.1:${PORT}/api/health" >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          grep -q '"status":"online"' /tmp/health.json
+          grep -q '"checks"' /tmp/health.json
+          code_root=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/")
+          code_og=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/og-image.jpg")
+          code_gh=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/github-stats")
+          test "$code_root" = "200"
+          test "$code_og" = "200"
+          test "$code_gh" = "200"
+      - name: Security headers on Worker responses (report-only)
+        continue-on-error: true
+        run: npm run check:security-headers
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright dashboard smoke (incl. desktop + phone layout)
+        run: npm run test:e2e
+        env:
+          CI: true

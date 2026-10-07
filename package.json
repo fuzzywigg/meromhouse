@@ -1,0 +1,31 @@
+{
+  "name": "meromhouse",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public KPI dashboard for meromhouse.org",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:qa": "node --test test/links.test.js test/html-validate.test.js test/seo-presence.test.js test/security-headers.test.js test/dashboard-ui.test.js",
+    "test:e2e": "playwright test",
+    "test:all": "npm test && npm run test:e2e",
+    "validate:html": "html-validate index.html",
+    "check:links": "node scripts/check-links.mjs",
+    "check:seo": "node scripts/check-seo-presence.mjs",
+    "check:security-headers": "node scripts/check-security-headers.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fuzzywigg/meromhouse.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.55.1",
+    "html-validate": "^9.7.1",
+    "linkedom": "^0.18.13"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
