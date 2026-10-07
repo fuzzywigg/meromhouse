@@ -1,0 +1,9 @@
+{
+  "extends": ["html-validate:recommended"],
+  "elements": ["html5"],
+  "rules": {
+    "void-style": ["error", { "style": "omit" }],
+    "no-trailing-whitespace": "off",
+    "long-title": "off"
+  }
+}

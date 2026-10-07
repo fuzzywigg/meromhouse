@@ -2,6 +2,9 @@
 .wrangler/
 .mf/
 
+# npm (test tooling only; site itself stays zero-runtime-deps)
+node_modules/
+
 # Local env / secrets (never commit)
 .env
 .env.*
