@@ -7,6 +7,8 @@
 // payload.commits at 20 and the events API is windowed, so this is not a
 // full month history. The card label should say so.
 
+import { SECURITY_HEADERS } from '../_shared/security-headers.js';
+
 const GITHUB_USER = 'fuzzywigg';
 const CACHE_TTL = 3600; // seconds
 const CACHE_KEY = 'github-stats-v1';
@@ -15,8 +17,9 @@ const MAX_REPO_PAGES = 10;
 export async function onRequest(context) {
   const { env } = context;
 
-  // CORS headers for browser fetch
+  // CORS headers for browser fetch, plus shared security headers
   const corsHeaders = {
+    ...SECURITY_HEADERS,
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
