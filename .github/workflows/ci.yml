@@ -41,6 +41,7 @@ jobs:
           test -f package-lock.json
           test -f playwright.config.mjs
           test -f scripts/check-links.mjs
+          test -f scripts/check-seo-presence.mjs
           test -f test/e2e/dashboard.smoke.spec.js
           test -f test/e2e/a11y-prefs.smoke.spec.js
       - name: Check for committed secret material
@@ -56,10 +57,15 @@ jobs:
             .
       - name: Offline internal link and asset check
         run: npm run check:links
+      - name: Validate HTML (local html-validate)
+        run: npm run validate:html
+      - name: Document title / meta description / lang (report-only)
+        continue-on-error: true
+        run: npm run check:seo
       - name: npm audit (report-only)
         continue-on-error: true
         run: npm audit
-      - name: Run unit, link, HTML, and dashboard UI tests
+      - name: Run unit, link, HTML, SEO presence, and dashboard UI tests
         run: npm test
       - name: Local wrangler Pages smoke
         run: |
