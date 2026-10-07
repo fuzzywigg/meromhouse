@@ -215,6 +215,36 @@ test.describe('a11y basics', () => {
       expect(rel.split(/\s+/)).toContain('noopener');
     }
   });
+
+  test('uptime hub link is underlined (not color-only) and refresh-bar is a landmark', async ({
+    page,
+  }) => {
+    await mockGitHubStats(page);
+    await page.goto('/');
+
+    const hub = page
+      .locator('.card')
+      .filter({ hasText: 'Uptime / Status' })
+      .locator('.card-row')
+      .filter({ hasText: 'fuzzywigg.ai' })
+      .locator('a[href*="fuzzywigg.ai"]');
+
+    await expect(hub).toBeVisible();
+    const decoration = await hub.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        textDecorationLine: style.textDecorationLine,
+        color: style.color,
+      };
+    });
+    expect(decoration.textDecorationLine).toContain('underline');
+
+    const refreshBar = page.locator('#refresh-bar');
+    await expect(refreshBar).toBeVisible();
+    const tag = await refreshBar.evaluate((el) => el.tagName.toLowerCase());
+    expect(tag).toBe('aside');
+    await expect(refreshBar).toHaveAttribute('aria-label', /refresh/i);
+  });
 });
 
 // Keep the mock payload referenced so helpers stay honest if the shape drifts.

@@ -115,6 +115,14 @@ describe('index.html', () => {
     assert.doesNotMatch(html, /\|\s*Last updated:/i);
   });
 
+  it('puts #refresh-bar in a labelled landmark and underlines card-row links', () => {
+    assert.match(
+      html,
+      /<aside\b[^>]*\bid=["']refresh-bar["'][^>]*\baria-label=["'][^"']*["']/i,
+    );
+    assert.match(html, /\.card-row-value\s+a\s*\{[^}]*text-decoration:\s*underline/s);
+  });
+
   it('pauses GitHub and health polling while the tab is hidden', () => {
     const script = inlineScripts(html);
     assert.match(script, /document\.addEventListener\(\s*['"]visibilitychange['"]/);
