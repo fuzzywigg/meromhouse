@@ -70,7 +70,7 @@ describe('index.html', () => {
     assert.match(html, /<picture>[\s\S]*og-image-600\.avif[\s\S]*og-image-600\.webp[\s\S]*<\/picture>/i);
     assert.match(
       html,
-      /<img\b[^>]*\bwidth=["']600["'][^>]*\bheight=["']315["'][^>]*\bloading=["']lazy["']/i,
+      /<img\b[^>]*\bwidth=["']320["'][^>]*\bheight=["']168["'][^>]*\bloading=["']lazy["']/i,
     );
   });
 });
