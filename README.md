@@ -53,7 +53,7 @@ Both live polls use a 5-minute interval and pause on `visibilitychange` when `do
 
 | Source | Status | Card |
 |--------|--------|------|
-| GitHub API via `/api/github-stats` | Live. Upstream fetches time out. Partial repos/events failure returns `partial: true` (not cached in KV). Invalid or partial KV entries are rejected. The card shows `ok`, `partial`, or `unavailable`. Polling pauses while the tab is hidden. | GitHub Activity |
+| GitHub API via `/api/github-stats` | Live. Upstream fetches time out. Partial repos/events failure returns `partial: true` (not cached in KV). Invalid, partial, or age-stale KV entries (by `cached_at` vs one-hour TTL) are rejected. The card shows `ok`, `partial`, or `unavailable`. Polling pauses while the tab is hidden. | GitHub Activity |
 | `/api/health` | Live same-origin fetch every 5 minutes while the tab is visible; paused when the tab is hidden. Client 10s timeout. `Cache-Control: no-store`. Optional KV probe → `degraded` on timeout/error; `checks.kv` is `unbound` when KV is not bound. | Uptime: meromhouse.org (`online`, `degraded`, or `error`, with `updated`) |
 | Not probed from the browser | Link only | Uptime: fuzzywigg.ai |
 | Hardcoded in `index.html` | Static | Active Projects, REE Research |
@@ -63,7 +63,7 @@ Both live polls use a 5-minute interval and pause on `visibilitychange` when `do
 | X API | Planned (not wired) | Followers |
 | YouTube API | Planned (not wired) | Subscribers |
 
-GitHub Activity calls `/api/github-stats`. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. Both polls pause while the tab is hidden. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
+GitHub Activity calls `/api/github-stats`. KV hits older than the one-hour TTL (by `cached_at`) are rejected and refetched. The client also treats an age-stale `cached_at` as unavailable. Both polls use a generation + `AbortController` gate (plus a 10s timeout) so a visibility hide/show race does not paint a superseded response or flash unavailable on abort. The Uptime card calls `/api/health` for meromhouse.org and keeps a text state next to the dot. Both polls pause while the tab is hidden. fuzzywigg.ai is a link, not a browser check. The other cards are copy in `index.html`.
 
 ## Deploy
 

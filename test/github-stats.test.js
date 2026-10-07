@@ -77,7 +77,7 @@ describe('GET /api/github-stats', () => {
       total_stars: 3,
       recent_commits: 4,
       top_repos: [],
-      cached_at: '2026-01-01T00:00:00.000Z',
+      cached_at: new Date().toISOString(),
     });
     const kv = createMemoryKv({ 'github-stats-v1': cached });
     let fetchCalls = 0;
@@ -101,6 +101,26 @@ describe('GET /api/github-stats', () => {
     } finally {
       globalThis.fetch = original;
     }
+  });
+
+  it('refetches when the KV entry is age-stale by cached_at', async () => {
+    const stale = JSON.stringify({
+      public_repos: 1,
+      followers: 2,
+      total_stars: 3,
+      recent_commits: 4,
+      top_repos: [],
+      cached_at: '2026-01-01T00:00:00.000Z',
+    });
+    const kv = createMemoryKv({ 'github-stats-v1': stale });
+    await withMockedFetch(githubFetchHandler, async () => {
+      const res = await onRequest({ request: mockRequest('GET'), env: { KV: kv } });
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get('X-Cache'), 'MISS');
+      const body = await res.json();
+      assert.equal(body.public_repos, 12);
+      assert.equal(body.total_stars, 10 + 5 + 99 + 7);
+    });
   });
 
   it('aggregates GitHub stats on cache miss and writes KV', async () => {

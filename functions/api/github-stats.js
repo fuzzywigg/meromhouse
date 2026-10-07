@@ -11,8 +11,10 @@
 // but repos and/or events fail or time out, the response is 200 with
 // partial: true and is not written to KV.
 
+import { CACHE_TTL_SECONDS, isCachedAtFresh } from '../lib/stats-cache.js';
+
 const GITHUB_USER = 'fuzzywigg';
-const CACHE_TTL = 3600; // seconds
+const CACHE_TTL = CACHE_TTL_SECONDS;
 const CACHE_KEY = 'github-stats-v1';
 const MAX_REPO_PAGES = 10;
 const UPSTREAM_TIMEOUT_MS = 8000;
@@ -144,6 +146,8 @@ function validCachedStats(raw) {
     if (typeof data[key] !== 'number' || !Number.isFinite(data[key])) return null;
   }
   if (typeof data.cached_at !== 'string' || Number.isNaN(Date.parse(data.cached_at))) return null;
+  // KV TTL can lag or be skipped in tests/bindings; never serve age-stale stats.
+  if (!isCachedAtFresh(data.cached_at)) return null;
   if (!Array.isArray(data.top_repos)) return null;
   for (const repo of data.top_repos) {
     if (!repo || typeof repo !== 'object') return null;

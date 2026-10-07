@@ -133,6 +133,28 @@ describe('index.html', () => {
     assert.match(script, /d\.partial\s*===\s*true/);
     assert.match(script, /setEl\('gh-status',\s*'partial'\)/);
   });
+
+  it('gates polls with generation + AbortController and rejects stale cached_at', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /function\s+beginPoll\s*\(/);
+    assert.match(script, /function\s+invalidatePolls\s*\(/);
+    assert.match(script, /function\s+shouldSurfaceFailure\s*\(/);
+    assert.match(script, /new\s+AbortController\s*\(/);
+    assert.match(
+      script,
+      /AbortSignal\.any\(\s*\[\s*signal\s*,\s*AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)\s*\]\s*\)/,
+    );
+    assert.match(script, /fetch\(\s*GITHUB_STATS_URL\s*,/);
+    assert.match(script, /fetch\(\s*HEALTH_URL\s*,/);
+    assert.match(script, /isFreshCachedAt\s*\(\s*d\.cached_at\s*\)/);
+    assert.match(script, /STATS_MAX_AGE_MS\s*=\s*3600\s*\*\s*1000/);
+    assert.match(script, /err\.name\s*===\s*['"]AbortError['"]/);
+    assert.match(
+      script,
+      /if\s*\(\s*document\.hidden\s*\)\s*\{[\s\S]*invalidatePolls\(\);/,
+    );
+    assert.match(script, /showGitHubUnavailable\s*\(/);
+  });
 });
 
 describe('docs: live poll pause-when-hidden', () => {
