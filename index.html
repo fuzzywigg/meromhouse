@@ -5,19 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Andrew Pappas — Building in Public</title>
   <meta name="description" content="Live KPI dashboard — projects, research, and deployments from Andrew Pappas." />
+  <meta name="theme-color" content="#0d1117" />
+  <link rel="canonical" href="https://meromhouse.org/" />
   <meta property="og:title" content="Andrew Pappas | Systems Builder &amp; AI Operator" />
   <meta property="og:description" content="Deputy Assistant Commissioner at IDEM Indiana, REE researcher, AI governance builder. Building infrastructure that matters." />
-  <meta property="og:url" content="https://meromhouse.org" />
+  <meta property="og:url" content="https://meromhouse.org/" />
   <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_US" />
   <meta property="og:site_name" content="meromhouse" />
   <meta property="og:image" content="https://meromhouse.org/og-image.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Andrew Pappas — Building in Public" />
   <link rel="icon" href="/public/favicon.ico" sizes="any" />
   <link rel="icon" href="/public/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png" sizes="180x180" />
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Andrew Pappas | Systems Builder" />
   <meta name="twitter:description" content="Deputy Assistant Commissioner at IDEM Indiana, REE researcher, AI governance builder." />
   <meta name="twitter:image" content="https://meromhouse.org/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Andrew Pappas — Building in Public" />
   <style>
     :root {
       --bg: #0d1117;
@@ -95,8 +104,17 @@
       font-size: 0.85rem;
       color: var(--muted);
     }
-    .header-meta a { color: var(--muted); }
-    .header-meta a:hover { color: var(--accent); }
+    /* Slightly brighter muted for AA on --navy refresh bar and card surfaces. */
+    .header-meta a {
+      color: #9aa4af;
+      text-decoration: underline;
+      text-underline-offset: 0.14em;
+      text-decoration-color: rgba(154, 164, 175, 0.45);
+    }
+    .header-meta a:hover {
+      color: var(--accent);
+      text-decoration-color: var(--accent);
+    }
 
     /* ── Layout ── */
     main {
@@ -206,6 +224,7 @@
       font-size: 0.95rem;
       font-weight: 600;
       line-height: 1.4;
+      color: var(--text);
     }
     .research-meta { font-size: 0.8rem; color: var(--muted); }
 
@@ -250,8 +269,16 @@
       border-top: 1px solid var(--border);
       margin-top: 1rem;
     }
-    footer a { color: var(--muted); }
-    footer a:hover { color: var(--accent); }
+    footer a {
+      color: #9aa4af;
+      text-decoration: underline;
+      text-underline-offset: 0.14em;
+      text-decoration-color: rgba(154, 164, 175, 0.45);
+    }
+    footer a:hover {
+      color: var(--accent);
+      text-decoration-color: var(--accent);
+    }
 
     /* ── Refresh bar ── */
     #refresh-bar {
@@ -273,11 +300,11 @@
 <header>
   <h1>Andrew <span>Pappas</span></h1>
   <p>Environmental systems · AI governance · Digital sovereignty</p>
-  <div class="header-meta">
-    <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener">YouTube</a>
+  <nav class="header-meta" aria-label="Profile links">
+    <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener noreferrer">YouTube</a>
     <a href="mailto:apappas.pu@gmail.com">Email</a>
-  </div>
+  </nav>
 </header>
 
 <main id="main">
@@ -301,7 +328,7 @@
       </div>
       <div class="card-row">
         <span class="card-row-label">Profile</span>
-        <span class="card-row-value"><a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">fuzzywigg →</a></span>
+        <span class="card-row-value"><a href="https://github.com/fuzzywigg" target="_blank" rel="noopener noreferrer">fuzzywigg →</a></span>
       </div>
     </div>
   </section>
@@ -312,21 +339,21 @@
     <div class="card-rows">
       <div class="project-row">
         <div>
-          <div class="project-name"><a href="https://github.com/fuzzywigg/matrix-workers" target="_blank" rel="noopener">matrix-workers</a></div>
+          <div class="project-name"><a href="https://github.com/fuzzywigg/matrix-workers" target="_blank" rel="noopener noreferrer">matrix-workers</a></div>
           <div class="project-desc">CF Workers Matrix bridge</div>
         </div>
         <span class="badge badge-active">Active</span>
       </div>
       <div class="project-row">
         <div>
-          <div class="project-name"><a href="https://github.com/fuzzywigg/agents-governance" target="_blank" rel="noopener">agents-governance</a></div>
+          <div class="project-name"><a href="https://github.com/fuzzywigg/agents-governance" target="_blank" rel="noopener noreferrer">agents-governance</a></div>
           <div class="project-desc">AI agent safety framework</div>
         </div>
         <span class="badge badge-active">Active</span>
       </div>
       <div class="project-row">
         <div>
-          <div class="project-name"><a href="https://meromhouse.org" target="_blank" rel="noopener">meromhouse</a></div>
+          <div class="project-name"><a href="https://meromhouse.org" target="_blank" rel="noopener noreferrer">meromhouse</a></div>
           <div class="project-desc">This public KPI dashboard</div>
         </div>
         <span class="badge badge-live">Live</span>
@@ -337,7 +364,7 @@
   <!-- Card 3: REE Research -->
   <section class="card" aria-labelledby="card-research">
     <div class="card-header"><span class="card-icon" aria-hidden="true">🔬</span> <h2 id="card-research">REE Research</h2></div>
-    <div class="research-title">Indiana's Opportunity in Rare Earth Elements and Critical Minerals</div>
+    <h3 class="research-title">Indiana's Opportunity in Rare Earth Elements and Critical Minerals</h3>
     <div class="research-meta">Indiana Journal of Earth Sciences · 2025</div>
     <div class="card-rows offset">
       <div class="card-row">
@@ -365,19 +392,19 @@
     <div class="card-rows">
       <div class="card-row">
         <span class="card-row-label">LinkedIn</span>
-        <span class="card-row-value"><a href="https://www.linkedin.com/in/apappas" target="_blank" rel="noopener">apappas →</a></span>
+        <span class="card-row-value"><a href="https://www.linkedin.com/in/apappas" target="_blank" rel="noopener noreferrer">apappas →</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label">GitHub</span>
-        <span class="card-row-value"><a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">@fuzzywigg →</a></span>
+        <span class="card-row-value"><a href="https://github.com/fuzzywigg" target="_blank" rel="noopener noreferrer">@fuzzywigg →</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label">YouTube</span>
-        <span class="card-row-value"><a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener">@fuzzywigg →</a></span>
+        <span class="card-row-value"><a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener noreferrer">@fuzzywigg →</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label">Hub</span>
-        <span class="card-row-value"><a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">fuzzywigg.ai →</a></span>
+        <span class="card-row-value"><a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener noreferrer">fuzzywigg.ai →</a></span>
       </div>
     </div>
   </section>
@@ -388,11 +415,11 @@
     <div class="card-rows">
       <div class="card-row">
         <span class="card-row-label">This site</span>
-        <span class="card-row-value"><a href="https://meromhouse.org" target="_blank" rel="noopener">meromhouse.org →</a></span>
+        <span class="card-row-value"><a href="https://meromhouse.org" target="_blank" rel="noopener noreferrer">meromhouse.org →</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label">Hub</span>
-        <span class="card-row-value"><a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">fuzzywigg.ai →</a></span>
+        <span class="card-row-value"><a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener noreferrer">fuzzywigg.ai →</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label">Stack</span>
@@ -415,7 +442,7 @@
       </div>
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot link" aria-hidden="true"></span> fuzzywigg.ai</span>
-        <span class="card-row-value">link · <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">hub</a></span>
+        <span class="card-row-value">link · <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener noreferrer">hub</a></span>
       </div>
       <div class="card-row">
         <span class="card-row-label"><span class="status-dot loading" id="gh-dot" aria-hidden="true"></span> GitHub API</span>
@@ -428,15 +455,15 @@
 
 <footer>
   <p>
-    <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/fuzzywigg" target="_blank" rel="noopener noreferrer">GitHub</a>
     &nbsp;·&nbsp;
-    <a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener">YouTube</a>
+    <a href="https://youtube.com/@fuzzywigg" target="_blank" rel="noopener noreferrer">YouTube</a>
     &nbsp;·&nbsp;
     <a href="mailto:apappas.pu@gmail.com">Email</a>
     &nbsp;·&nbsp;
     Powered by Cloudflare Pages
   </p>
-  <p class="footer-note">Part of the <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener">fuzzywigg.ai</a> hub</p>
+  <p class="footer-note">Part of the <a href="https://www.fuzzywigg.ai/" target="_blank" rel="noopener noreferrer">fuzzywigg.ai</a> hub</p>
 </footer>
 
 <script>
@@ -551,6 +578,7 @@
     try {
       const res = await fetch(GITHUB_STATS_URL, {
         signal: AbortSignal.any([signal, AbortSignal.timeout(CLIENT_FETCH_TIMEOUT_MS)]),
+        priority: 'low',
       });
       if (!res.ok) throw new Error('API error');
       const d = await res.json();
@@ -617,6 +645,7 @@
     try {
       const res = await fetch(HEALTH_URL, {
         signal: AbortSignal.any([signal, AbortSignal.timeout(CLIENT_FETCH_TIMEOUT_MS)]),
+        priority: 'low',
       });
       if (!res.ok) throw new Error('health http');
       const data = await res.json();
@@ -668,10 +697,25 @@
     startHealthTimer();
   });
 
-  refresh();
-  startRefreshTimer();
-  loadHealth();
-  startHealthTimer();
+  function bootLivePolls() {
+    refresh();
+    startRefreshTimer();
+    loadHealth();
+    startHealthTimer();
+  }
+
+  // After first paint so /api/* fetches are not on the critical navigation chain.
+  function scheduleLivePolls() {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => {
+        setTimeout(bootLivePolls, 0);
+      });
+      return;
+    }
+    setTimeout(bootLivePolls, 0);
+  }
+
+  scheduleLivePolls();
 </script>
 </body>
 </html>

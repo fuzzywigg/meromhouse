@@ -32,7 +32,7 @@ describe('index.html', () => {
     }
   });
 
-  it('sets rel=noopener on every external link', () => {
+  it('sets rel=noopener noreferrer on every external link', () => {
     const re = /<a\b[^>]*>/gi;
     let match;
     let seen = 0;
@@ -42,6 +42,7 @@ describe('index.html', () => {
       if (!href || !/^https?:\/\//i.test(href[1])) continue;
       seen += 1;
       assert.match(tag, /\brel\s*=\s*["'][^"']*\bnoopener\b/i, tag);
+      assert.match(tag, /\brel\s*=\s*["'][^"']*\bnoreferrer\b/i, tag);
     }
     assert.ok(seen > 0, 'expected external links');
   });
@@ -62,17 +63,39 @@ describe('index.html', () => {
   it('includes description, Open Graph, and Twitter meta tags', () => {
     const required = [
       /<meta\s+name=["']description["']/i,
+      /<meta\s+name=["']theme-color["']\s+content=["']#0d1117["']/i,
+      /<link\s+rel=["']canonical["']\s+href=["']https:\/\/meromhouse\.org\/["']/i,
       /<meta\s+property=["']og:title["']/i,
       /<meta\s+property=["']og:description["']/i,
       /<meta\s+property=["']og:url["']/i,
       /<meta\s+property=["']og:type["']/i,
+      /<meta\s+property=["']og:locale["']/i,
       /<meta\s+property=["']og:image["']/i,
+      /<meta\s+property=["']og:image:width["']\s+content=["']1200["']/i,
+      /<meta\s+property=["']og:image:height["']\s+content=["']630["']/i,
+      /<meta\s+property=["']og:image:alt["']/i,
+      /<link\s+rel=["']apple-touch-icon["']/i,
       /<meta\s+name=["']twitter:card["']/i,
       /<meta\s+name=["']twitter:title["']/i,
       /<meta\s+name=["']twitter:description["']/i,
       /<meta\s+name=["']twitter:image["']/i,
+      /<meta\s+name=["']twitter:image:alt["']/i,
     ];
     for (const pattern of required) assert.match(html, pattern);
+  });
+
+  it('keeps research title as an h3 under the card h2', () => {
+    assert.match(
+      html,
+      /<h2\b[^>]*\bid=["']card-research["'][^>]*>[\s\S]*?<h3\b[^>]*class=["'][^"']*\bresearch-title\b/i,
+    );
+  });
+
+  it('landmarks profile links in a labelled nav', () => {
+    assert.match(
+      html,
+      /<nav\b[^>]*class=["'][^"']*\bheader-meta\b[^"']*["'][^>]*\baria-label=["']Profile links["']/i,
+    );
   });
 
   it('offers a skip link to main and labels each card with an h2', () => {
@@ -131,6 +154,15 @@ describe('index.html', () => {
     assert.match(script, /function\s+startHealthTimer\s*\(\s*\)\s*\{[\s\S]*document\.hidden/);
     assert.match(script, /healthTimer\s*=\s*setInterval\(\s*loadHealth\s*,\s*REFRESH_MS\s*\)/);
     assert.match(script, /refreshTimer\s*=\s*setInterval\(\s*refresh\s*,\s*REFRESH_MS\s*\)/);
+  });
+
+  it('schedules live polls after first paint and marks fetches low priority', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /function\s+bootLivePolls\s*\(/);
+    assert.match(script, /function\s+scheduleLivePolls\s*\(/);
+    assert.match(script, /requestAnimationFrame/);
+    assert.match(script, /scheduleLivePolls\s*\(\s*\)\s*;/);
+    assert.match(script, /priority:\s*['"]low['"]/);
   });
 
   it('times out health and github-stats fetches and rejects a bad stats shape', () => {
