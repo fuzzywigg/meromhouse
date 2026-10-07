@@ -1,6 +1,6 @@
 # Merge order — open PRs (Oct 7, 2026)
 
-Snapshot: **2026-10-07**. Tip branch: `cursor/integration-collapse-28-47-9501` (this PR).
+Snapshot: **2026-10-07**. Tip: **#48** (`cursor/integration-collapse-28-47-9501`).
 
 Built from #47 (`cursor/integration-fold-45-onto-46-70c0`). Every open PR **#28–#47** (and earlier stack sources **#18**, **#24–#27**) was checked with `git merge-base --is-ancestor` and `git cherry`. Nothing new needed folding: all unique work is already in the tip, or is superseded docs that conflict only on `docs/MERGE-ORDER.md` / older README wording.
 
@@ -35,7 +35,7 @@ This guide does **not** merge, close, or retarget any PR.
 | #45 | test: Playwright viewport smoke + report-only security headers | Contained in tip (cherry-picked onto #46) | Close after tip merges |
 | #46 | Integration: fold #44 onto #43 | Contained in tip | Close after tip merges |
 | #47 | Integration: fold #45 onto #46 | Contained in tip (prior tip) | Close after tip merges |
-| **This PR** | Integration: collapse #28–#47 into one tip | Stack tip | **Review and merge this PR** |
+| **#48** | Integration: collapse #28–#47 into one tip | Stack tip | **Review and merge #48** |
 
 ## Not folded (and why)
 
@@ -48,6 +48,6 @@ No other open PR in **#28–#47** had commits or patches missing from the tip. N
 
 ## Single recommendation
 
-**Review and merge this tip PR** (base `main`), then **close these:** #18, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47.
+**Review and merge #48** (base `main`), then **close these:** #18, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #35, #36, #37, #38, #39, #40, #41, #42, #43, #44, #45, #46, #47.
 
 Do not merge the intermediates. One merge into `main` is enough.
