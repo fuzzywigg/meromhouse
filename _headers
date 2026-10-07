@@ -2,7 +2,33 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+
+# HTML shell: short cache. Do not set Cache-Control on /* or asset
+# rules append duplicate Cache-Control values in Pages/_headers merges.
+/
   Cache-Control: public, max-age=300
+
+/index.html
+  Cache-Control: public, max-age=300
+
+# Longer TTL for sized social/image assets (filenames are stable; bump when replaced).
+/og-image.jpg
+  Cache-Control: public, max-age=86400
+
+/og-image.webp
+  Cache-Control: public, max-age=86400
+
+/public/*
+  Cache-Control: public, max-age=86400
+
+/site.webmanifest
+  Cache-Control: public, max-age=86400
+
+/robots.txt
+  Cache-Control: public, max-age=86400
+
+/sitemap.xml
+  Cache-Control: public, max-age=86400
 
 # No /api/* rules here.
 # Cloudflare Pages applies _headers only to static-asset responses. Pages

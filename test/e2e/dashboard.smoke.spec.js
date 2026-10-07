@@ -128,11 +128,17 @@ test.describe('a11y basics', () => {
     await expect(page.locator('main')).toHaveCount(1);
     await expect(page.locator('header')).toHaveCount(1);
     await expect(page.locator('footer')).toHaveCount(1);
+    await expect(page.locator('nav.header-meta')).toHaveAttribute(
+      'aria-label',
+      'Profile links',
+    );
 
     const h1 = page.locator('h1');
     await expect(h1).toHaveCount(1);
     await expect(h1).toContainText('Andrew');
     await expect(h1).toContainText('Pappas');
+    await expect(page.locator('h2')).toHaveCount(6);
+    await expect(page.locator('h3.research-title')).toHaveCount(1);
   });
 
   test('live regions announce status and refresh updates politely', async ({
@@ -202,7 +208,9 @@ test.describe('a11y basics', () => {
     expect(numeric).toBeGreaterThanOrEqual(2);
   });
 
-  test('external links keep rel=noopener in the live DOM', async ({ page }) => {
+  test('external links keep rel=noopener noreferrer in the live DOM', async ({
+    page,
+  }) => {
     await mockGitHubStats(page);
     await page.goto('/');
 
@@ -212,7 +220,9 @@ test.describe('a11y basics', () => {
 
     for (let i = 0; i < count; i += 1) {
       const rel = (await external.nth(i).getAttribute('rel')) || '';
-      expect(rel.split(/\s+/)).toContain('noopener');
+      const tokens = rel.split(/\s+/);
+      expect(tokens).toContain('noopener');
+      expect(tokens).toContain('noreferrer');
     }
   });
 
