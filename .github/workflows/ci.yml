@@ -16,6 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Check required files
         run: |
           test -f index.html
@@ -32,14 +35,19 @@ jobs:
           test -f wrangler.toml
           test -f .cursor/environment.json
           test -f .github/workflows/ci.yml
+          test -f .htmlvalidate.json
+          test -f package.json
+          test -f package-lock.json
       - name: Check for committed secret material
         run: |
           ! grep -RInE '(api[_-]?key|secret|token|password)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}' \
             --exclude-dir=.git \
             --exclude-dir=.wrangler \
+            --exclude-dir=node_modules \
             --exclude='*.md' \
             --exclude='*.yml' \
             --exclude='*.yaml' \
+            --exclude='package-lock.json' \
             .
-      - name: Run Pages Function unit tests
-        run: node --test test/*.test.js
+      - name: Run unit, link, HTML, and dashboard UI tests
+        run: npm test
