@@ -43,13 +43,16 @@ jobs:
           test -f scripts/check-links.mjs
           test -f scripts/check-seo-presence.mjs
           test -f scripts/check-security-headers.mjs
+          test -f scripts/check-perf.mjs
           test -f docs/security-headers-2026-10-07.md
+          test -f docs/perf-2026-10-07.md
           test -f test/e2e/dashboard.smoke.spec.js
           test -f test/e2e/a11y-axe.smoke.spec.js
           test -f test/e2e/a11y-prefs.smoke.spec.js
           test -f test/e2e/viewport-layout.smoke.spec.js
           test -f docs/a11y-2026-10-07.md
           test -f test/security-headers.test.js
+          test -f test/perf.test.js
       - name: Check for committed secret material
         run: |
           ! grep -RInE '(api[_-]?key|secret|token|password)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}' \
@@ -116,4 +119,18 @@ jobs:
             echo '::endgroup::'
           else
             echo 'No test-results/a11y/axe-summary.md produced (e2e may have failed before the axe scan).'
+          fi
+      - name: Lighthouse performance / best-practices (report-only)
+        continue-on-error: true
+        run: npm run check:perf
+      - name: Publish Lighthouse perf summary (report-only; never fails the job)
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f test-results/perf/summary.md ]; then
+            echo '::group::Lighthouse performance summary (report-only)'
+            cat test-results/perf/summary.md
+            echo '::endgroup::'
+          else
+            echo 'No test-results/perf/summary.md produced.'
           fi
