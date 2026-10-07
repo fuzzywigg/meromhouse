@@ -393,6 +393,7 @@
 <script>
   const GITHUB_STATS_URL = '/api/github-stats';
   const REFRESH_MS = 5 * 60 * 1000; // 5 min
+  const CLIENT_FETCH_TIMEOUT_MS = 10000;
   let refreshTimer = null;
 
   function setEl(id, val) {
@@ -403,7 +404,7 @@
   function setGitHubDot(state) {
     const dot = document.getElementById('gh-dot');
     if (!dot) return;
-    dot.classList.remove('loading', 'green', 'red');
+    dot.classList.remove('loading', 'green', 'yellow', 'red');
     if (state) dot.classList.add(state);
   }
 
@@ -425,17 +426,37 @@
     setGitHubDot('red');
   }
 
+  // Reject a response that is not the stats shape (same rules as KV cache).
+  function validGitHubStats(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+    if (data.ok === false) return false;
+    for (const key of ['public_repos', 'followers', 'total_stars', 'recent_commits']) {
+      if (typeof data[key] !== 'number' || !Number.isFinite(data[key])) return false;
+    }
+    if (typeof data.cached_at !== 'string' || Number.isNaN(Date.parse(data.cached_at))) return false;
+    if (!Array.isArray(data.top_repos)) return false;
+    return true;
+  }
+
   async function loadGitHub() {
     try {
-      const res = await fetch(GITHUB_STATS_URL);
+      const res = await fetch(GITHUB_STATS_URL, {
+        signal: AbortSignal.timeout(CLIENT_FETCH_TIMEOUT_MS),
+      });
       if (!res.ok) throw new Error('API error');
       const d = await res.json();
-      setEl('gh-stars', d.total_stars ?? '—');
-      setEl('gh-repos', d.public_repos ?? '—');
-      setEl('gh-commits', d.recent_commits ?? '—');
-      setEl('gh-status', 'ok');
+      if (!validGitHubStats(d)) throw new Error('bad stats shape');
+      setEl('gh-stars', d.total_stars);
+      setEl('gh-repos', d.public_repos);
+      setEl('gh-commits', d.recent_commits);
+      if (d.partial === true) {
+        setEl('gh-status', 'partial');
+        setGitHubDot('yellow');
+      } else {
+        setEl('gh-status', 'ok');
+        setGitHubDot('green');
+      }
       showCachedAt(d.cached_at);
-      setGitHubDot('green');
     } catch {
       showGitHubUnavailable();
     }
@@ -484,7 +505,9 @@
 
   async function loadHealth() {
     try {
-      const res = await fetch(HEALTH_URL);
+      const res = await fetch(HEALTH_URL, {
+        signal: AbortSignal.timeout(CLIENT_FETCH_TIMEOUT_MS),
+      });
       if (!res.ok) throw new Error('health http');
       const data = await res.json();
       let state = 'error';
