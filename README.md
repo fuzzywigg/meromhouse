@@ -69,6 +69,17 @@ GitHub Activity calls `/api/github-stats`. KV hits older than the one-hour TTL (
 
 See [DEPLOY.md](./DEPLOY.md) for the full setup walkthrough.
 
+## Tests
+
+```bash
+npm ci
+npm test                 # Node unit tests (Pages Functions + index.html shell)
+npx playwright install chromium
+npm run test:e2e         # Playwright smokes: refresh-bar honesty, /api/health row, a11y basics
+```
+
+Playwright starts `wrangler pages dev` itself (port 8790 by default). GitHub stats are route-mocked so CI does not call api.github.com; `/api/health` hits the real local Pages Function.
+
 ## File Structure
 
 ```
@@ -77,10 +88,15 @@ meromhouse/
 ├── functions/api/
 │   ├── github-stats.js # CF Pages Function — GitHub data aggregator
 │   └── health.js       # CF Pages Function — health check
+├── test/
+│   ├── *.test.js       # Node unit tests
+│   └── e2e/            # Playwright dashboard smokes
 ├── public/             # Favicon assets retained from retired Next app
 ├── docs/               # Governance, release, screenshots
 ├── .cursor/
 │   └── environment.json # Cloud agent install/start (static + wrangler)
+├── package.json        # npm test + Playwright scripts
+├── playwright.config.mjs
 ├── site.webmanifest    # PWA manifest (icons under /public/)
 ├── _headers            # CF Pages security headers
 ├── _redirects          # CF Pages redirects (no active rules; APIs under /api/*)

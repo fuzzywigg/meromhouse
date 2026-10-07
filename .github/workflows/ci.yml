@@ -32,6 +32,10 @@ jobs:
           test -f wrangler.toml
           test -f .cursor/environment.json
           test -f .github/workflows/ci.yml
+          test -f package.json
+          test -f package-lock.json
+          test -f playwright.config.mjs
+          test -f test/e2e/dashboard.smoke.spec.js
       - name: Check for committed secret material
         run: |
           ! grep -RInE '(api[_-]?key|secret|token|password)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}' \
@@ -41,8 +45,10 @@ jobs:
             --exclude='*.yml' \
             --exclude='*.yaml' \
             .
+      - name: Install npm dependencies
+        run: npm ci
       - name: Run Pages Function unit tests
-        run: node --test test/*.test.js
+        run: npm test
       - name: Local wrangler Pages smoke
         run: |
           set -euo pipefail
@@ -67,3 +73,9 @@ jobs:
           test "$code_root" = "200"
           test "$code_og" = "200"
           test "$code_gh" = "200"
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright dashboard smoke
+        run: npm run test:e2e
+        env:
+          CI: true

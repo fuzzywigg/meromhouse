@@ -2,6 +2,15 @@
 .wrangler/
 .mf/
 
+# Node
+node_modules/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Local env / secrets (never commit)
 .env
 .env.*
