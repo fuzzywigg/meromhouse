@@ -75,10 +75,10 @@ See [DEPLOY.md](./DEPLOY.md) for the full setup walkthrough.
 npm ci
 npm test                 # Node unit tests (Pages Functions + index.html shell)
 npx playwright install chromium
-npm run test:e2e         # Playwright smokes: refresh-bar honesty, /api/health row, a11y basics
+npm run test:e2e         # Playwright smokes: refresh-bar, health row, a11y, reduced-motion, noscript
 ```
 
-Playwright starts `wrangler pages dev` itself (port 8790 by default). GitHub stats are route-mocked so CI does not call api.github.com; `/api/health` hits the real local Pages Function.
+Playwright starts `wrangler pages dev` itself (port 8790 by default). GitHub stats are route-mocked so CI does not call api.github.com; `/api/health` hits the real local Pages Function. Reduced-motion and noscript smokes live in `test/e2e/a11y-prefs.smoke.spec.js` and do not rewrite bio/OG copy.
 
 ## File Structure
 
