@@ -28,6 +28,7 @@
   <meta name="twitter:image" content="https://meromhouse.org/og-image.jpg">
   <meta name="twitter:image:alt" content="Andrew Pappas — Building in Public">
   <link rel="preload" href="/fonts/source-sans-3-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/dashboard.js" as="script">
   <script src="/assets/dashboard.js" defer></script>
   <style>
     @font-face {
@@ -236,7 +237,6 @@
       letter-spacing: 0.04em;
     }
     .badge-active { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
-    .badge-wip    { background: rgba(210,153,34,0.15); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
     .badge-live   { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.25); }
 
     /* ── Project rows ── */
@@ -281,7 +281,6 @@
     }
     .status-dot.loading { background: var(--muted); }
     .card-rows.offset { margin-top: 0.25rem; }
-    .status-online { color: var(--green); }
     .footer-note { margin-top: 0.4rem; }
     .og-preview {
       margin: 1.25rem auto 0;
@@ -519,6 +518,7 @@
         src="/og-image-600.jpg"
         width="320"
         height="168"
+        sizes="160px"
         alt=""
         loading="lazy"
         decoding="async"
