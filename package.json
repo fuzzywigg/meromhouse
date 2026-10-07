@@ -12,7 +12,8 @@
     "validate:html": "html-validate index.html",
     "check:links": "node scripts/check-links.mjs",
     "check:seo": "node scripts/check-seo-presence.mjs",
-    "check:security-headers": "node scripts/check-security-headers.mjs"
+    "check:security-headers": "node scripts/check-security-headers.mjs",
+    "check:perf": "node scripts/check-perf.mjs --serve"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.55.1",
     "html-validate": "^9.7.1",
+    "lighthouse": "^12.8.2",
     "linkedom": "^0.18.13"
   },
   "engines": {

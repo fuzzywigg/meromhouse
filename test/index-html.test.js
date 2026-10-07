@@ -146,14 +146,17 @@ describe('index.html', () => {
     assert.match(html, /a:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--focus-ring\)/s);
   });
 
-  it('preloads critical fonts and serves modern image formats with dimensions', () => {
+  it('preloads critical fonts/scripts and serves modern image formats with dimensions', () => {
     assert.match(html, /rel=["']preload["'][^>]*as=["']font["']/i);
     assert.match(html, /source-sans-3-latin-400-normal\.woff2/);
+    assert.match(html, /rel=["']preload["'][^>]*href=["']\/assets\/dashboard\.js["'][^>]*as=["']script["']/i);
     assert.match(html, /<picture>[\s\S]*og-image-600\.avif[\s\S]*og-image-600\.webp[\s\S]*<\/picture>/i);
     assert.match(
       html,
       /<img\b[^>]*\bwidth=["']320["'][^>]*\bheight=["']168["'][^>]*\bloading=["']lazy["']/i,
     );
+    assert.doesNotMatch(html, /\.badge-wip\b/);
+    assert.doesNotMatch(html, /\.status-online\b/);
   });
 
   it('pauses GitHub and health polling while the tab is hidden', () => {
