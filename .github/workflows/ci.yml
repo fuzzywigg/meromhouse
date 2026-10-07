@@ -38,6 +38,8 @@ jobs:
           test -f og-image.jpg
           test -f site.webmanifest
           test -f public/favicon.svg
+          test -f robots.txt
+          test -f sitemap.xml
           test -f README.md
           test -f AGENTS.md
           test -f DEPLOY.md
@@ -56,11 +58,13 @@ jobs:
           test -f scripts/update-visual-snapshots.sh
           test -f docs/security-headers-2026-10-07.md
           test -f docs/perf-2026-10-07.md
+          test -f docs/seo-presence-2026-10-07.md
           test -f test/e2e/dashboard.smoke.spec.js
           test -f test/e2e/a11y-axe.smoke.spec.js
           test -f test/e2e/a11y-prefs.smoke.spec.js
           test -f test/e2e/viewport-layout.smoke.spec.js
           test -f test/e2e/visual.spec.js
+          test -f test/e2e/seo.smoke.spec.js
           test -f docs/a11y-2026-10-07.md
           test -f test/security-headers.test.js
           test -f test/perf.test.js
@@ -79,13 +83,12 @@ jobs:
         run: npm run check:links
       - name: Validate HTML (local html-validate)
         run: npm run validate:html
-      - name: Document title / meta description / lang (report-only)
-        continue-on-error: true
+      - name: Technical SEO / metadata gates
         run: npm run check:seo
       - name: npm audit (report-only)
         continue-on-error: true
         run: npm audit
-      - name: Run unit, link, HTML, SEO presence, security-headers fixtures, and dashboard UI tests
+      - name: Run unit, link, HTML, SEO, security-headers fixtures, and dashboard UI tests
         run: npm test
       - name: Local wrangler Pages smoke
         run: |
