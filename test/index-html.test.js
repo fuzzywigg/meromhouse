@@ -124,6 +124,15 @@ describe('index.html', () => {
     assert.match(script, /healthTimer\s*=\s*setInterval\(\s*loadHealth\s*,\s*REFRESH_MS\s*\)/);
     assert.match(script, /refreshTimer\s*=\s*setInterval\(\s*refresh\s*,\s*REFRESH_MS\s*\)/);
   });
+
+  it('times out health and github-stats fetches and rejects a bad stats shape', () => {
+    const script = inlineScripts(html);
+    assert.match(script, /CLIENT_FETCH_TIMEOUT_MS\s*=\s*10000/);
+    assert.match(script, /AbortSignal\.timeout\(CLIENT_FETCH_TIMEOUT_MS\)/);
+    assert.match(script, /function validGitHubStats\s*\(/);
+    assert.match(script, /d\.partial\s*===\s*true/);
+    assert.match(script, /setEl\('gh-status',\s*'partial'\)/);
+  });
 });
 
 describe('docs: live poll pause-when-hidden', () => {

@@ -43,3 +43,27 @@ jobs:
             .
       - name: Run Pages Function unit tests
         run: node --test test/*.test.js
+      - name: Local wrangler Pages smoke
+        run: |
+          set -euo pipefail
+          PORT=8799
+          npx --yes wrangler@4 pages dev . --port "$PORT" --ip 127.0.0.1 > /tmp/wrangler-smoke.log 2>&1 &
+          WPID=$!
+          cleanup() { kill "$WPID" 2>/dev/null || true; wait "$WPID" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 45); do
+            if curl -sf "http://127.0.0.1:${PORT}/api/health" >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          grep -q '"status":"online"' /tmp/health.json
+          grep -q '"checks"' /tmp/health.json
+          code_root=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/")
+          code_og=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/og-image.jpg")
+          code_gh=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/github-stats")
+          test "$code_root" = "200"
+          test "$code_og" = "200"
+          test "$code_gh" = "200"
